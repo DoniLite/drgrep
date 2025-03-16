@@ -9,8 +9,6 @@ fn main() {
         println!("error during the execuion {}", err);
         process::exit(1);
     });
-    println!("we are searching : {}", config.search_key);
-    println!("in the file : {}", config.file_path);
     if let Err(e) = run(config) {
         println!("An error occurred {}", e);
         process::exit(1);
