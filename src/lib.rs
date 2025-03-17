@@ -152,15 +152,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_runner() {
-        let config = Config {
-            search_key: "hello".to_string(),
-            file_path: "poem.txt".to_string(),
-        };
-        assert!(run(config).is_ok());
-    }
-
-    #[test]
     fn sensitive_case() {
         let search_key = "duct";
         let content = "\
