@@ -3,13 +3,13 @@ name: Rust-CI
 on:
   push:
     branches:
-        - main
+        - master
         - develop
         - feature/*
         - release/*
   pull_request:
     branches:
-        - main
+        - master
         - develop
         - feature/*
         - release/*

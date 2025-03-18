@@ -3,4 +3,12 @@ name = "drgrep"
 version = "0.1.0"
 edition = "2021"
 
-[dependencies]
+# Définition du binaire (exécutable)
+[[bin]]
+name = "drgrep"
+path = "src/main.rs"
+
+# Définition de la bibliothèque (crate)
+[lib]
+name = "drgrep"
+path = "src/lib.rs"
