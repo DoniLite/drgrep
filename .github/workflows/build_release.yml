@@ -29,7 +29,23 @@ jobs:
 
   build:
     needs: check_tag
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            binary_name: drgrep-linux
+            executable_extension: ""
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            binary_name: drgrep-windows
+            executable_extension: ".exe"
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            binary_name: drgrep-macos
+            executable_extension: ""
+    
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -37,52 +53,58 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-unknown-linux-gnu,x86_64-pc-windows-msvc,x86_64-apple-darwin
+          targets: ${{ matrix.target }}
 
-      - name: Install target support
+      - name: Build for ${{ matrix.os }}
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Prepare artifact
+        shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y mingw-w64 gcc-mingw-w64
-          rustup target add x86_64-pc-windows-msvc
-          rustup target add x86_64-apple-darwin
-
-      - name: Build for Linux
-        run: cargo build --release --target x86_64-unknown-linux-gnu
-
-      - name: Build for Windows
-        run: cargo build --release --target x86_64-pc-windows-msvc
-
-      - name: Build for macOS
-        run: cargo build --release --target x86_64-apple-darwin
-
-      - name: Upload executables
+          mkdir -p artifacts
+          if [ "${{ matrix.os }}" = "windows-latest" ]; then
+            cp "target/${{ matrix.target }}/release/drgrep${{ matrix.executable_extension }}" "artifacts/${{ matrix.binary_name }}${{ matrix.executable_extension }}"
+          else
+            cp "target/${{ matrix.target }}/release/drgrep" "artifacts/${{ matrix.binary_name }}${{ matrix.executable_extension }}"
+          fi
+          
+      - name: Upload executable
         if: needs.check_tag.outputs.is_release == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: binaries
-          path: |
-            target/x86_64-unknown-linux-gnu/release/drgrep
-            target/x86_64-pc-windows-msvc/release/drgrep.exe
-            target/x86_64-apple-darwin/release/drgrep
+          name: ${{ matrix.binary_name }}
+          path: artifacts/${{ matrix.binary_name }}${{ matrix.executable_extension }}
 
   release:
     needs: [check_tag, build]
     if: needs.check_tag.outputs.is_release == 'true'
     runs-on: ubuntu-latest
     steps:
-      - name: Download all artifacts
+      - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
-          name: binaries
-          path: binaries
+          name: drgrep-linux
+          path: artifacts
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: drgrep-windows
+          path: artifacts
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: drgrep-macos
+          path: artifacts
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            binaries/drgrep
-            binaries/drgrep.exe
-            binaries/drgrep
+            artifacts/drgrep-linux
+            artifacts/drgrep-windows.exe
+            artifacts/drgrep-macos
           draft: false
           prerelease: false
         env:
