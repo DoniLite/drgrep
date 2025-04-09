@@ -1,0 +1,43 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"
+    branches:
+      - master
+      - release/*
+  pull_request:
+    tags:
+      - "v*"
+    branches:
+      - master
+      - release/*
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build for Linux
+        run: cargo build --release --target x86_64-unknown-linux-gnu
+
+      - name: Build for Windows
+        run: cargo build --release --target x86_64-pc-windows-msvc
+
+      - name: Build for macOS
+        run: cargo build --release --target x86_64-apple-darwin
+
+      - name: Upload executables
+        uses: actions/upload-artifact@v3
+        with:
+          name: binaries
+          path: |
+            target/x86_64-unknown-linux-gnu/release/drgrep
+            target/x86_64-pc-windows-msvc/release/drgrep.exe
+            target/x86_64-apple-darwin/release/drgrep
