@@ -1,54 +1,27 @@
-use std::{collections::HashMap, env, error::Error, fs, path};
+pub mod color;
+pub mod args;
 
+use std::{error::Error, fs, path};
 
-pub struct ArgParser {
-    pub args: HashMap<String, Option<String>>,
-}
+pub use color::config::Color;
+pub use color::printer::print_colored;
+pub use color::printer::print_styled;
+pub use color::printer::print_partial_colored;
 
-impl ArgParser {
-    pub fn new() -> Self {
-        let mut args = HashMap::new();
-        let mut iter = env::args().skip(1).peekable(); // Ignore le premier argument (nom du programme)
-
-        while let Some(arg) = iter.next() {
-            if arg.starts_with("--") {
-                let key = arg.trim_start_matches("--").to_string();
-                if let Some(value) = iter.peek() {
-                    if !value.starts_with("--") {
-                        args.insert(key, Some(iter.next().unwrap()));
-                    } else {
-                        args.insert(key, None);
-                    }
-                } else {
-                    args.insert(key, None);
-                }
-            } else if arg.starts_with("-") {
-                let key = arg.trim_start_matches("-").to_string();
-                args.insert(key, None);
-            }
-        }
-
-        Self { args }
-    }
-
-    pub fn get(&self, key: &str) -> Option<&Option<String>> {
-        self.args.get(key)
-    }
-
-    pub fn has(&self, key: &str) -> bool {
-        self.args.contains_key(key)
-    }
-}
 /// The config struct
+#[derive(Debug)]
 pub struct Config {
     pub search_key: String,
     pub file_path: String,
+    pub files: Vec<String>,
+    pub sensitive: bool
 }
 
 pub struct SearchResult<'a, 'b> {
     pub lines: Vec<LinesInfo<'a>>,
     pub word: &'b str,
     pub occurrence: usize,
+    // pub source: Vec<String>
 }
 
 pub struct LinesInfo<'a> {
@@ -58,16 +31,37 @@ pub struct LinesInfo<'a> {
 }
 
 impl Config {
-    pub fn new(args: &[String]) -> Result<Self, &'static str> {
-        if args.len() < 3 {
-            return Err(
-                "You must provide arguments to the script example:  \n cargo run arg1 arg2",
-            );
+    pub fn new() -> Result<Self, &'static str> {
+        let args = args::parser::ArgParser::new();
+        // print!("{:?}", args);
+        let mut config = Config{
+            search_key: "".to_string(),
+            file_path: "".to_string(),
+            files: vec![],
+            sensitive: false
+        };
+        if !args.has("key") {
+            return Err("no search key provided")
+        } else {
+            config.search_key = match args.get("key") {
+                Some(value) => {
+                    value.as_ref().unwrap().clone()
+                }
+                None => "".to_string()
+            }
         }
-        Ok(Config {
-            search_key: args[1].clone(),
-            file_path: args[2].clone(),
-        })
+        if !args.has("source") {
+            return Err("no search key provided")
+        } else {
+            config.file_path = match args.get("source") {
+                Some(value) => {
+                    value.as_ref().unwrap().clone()
+                }
+                None => "".to_string()
+            }
+        }
+        // print!("{:?}", config);
+        Ok(config)
     }
 }
 

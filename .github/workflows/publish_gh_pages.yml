@@ -1,0 +1,39 @@
+name: Generate and Deploy Docs
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+      - release/*
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Generate documentation
+        run: |
+          cargo doc --no-deps --document-private-items
+          echo "<meta http-equiv=\"refresh\" content=\"0; url=$(grep -m 1 name Cargo.toml | cut -d '"' -f 2)/index.html\">" > target/doc/index.html
+          cp -r target/doc ./docs
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: docs
+          branch: gh-pages
