@@ -8,21 +8,43 @@ on:
       - master
       - release/*
   pull_request:
-    tags:
-      - "v*"
     branches:
       - master
       - release/*
 
 jobs:
+  check_tag:
+    runs-on: ubuntu-latest
+    outputs:
+      is_release: ${{ steps.check.outputs.is_release }}
+    steps:
+      - id: check
+        name: Check if this is a tagged release
+        run: |
+          if [[ ${{ github.ref }} =~ ^refs/tags/v ]]; then
+            echo "is_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_release=false" >> $GITHUB_OUTPUT
+          fi
+
   build:
+    needs: check_tag
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Install Rust
+      - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu,x86_64-pc-windows-msvc,x86_64-apple-darwin
+
+      - name: Install target support
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mingw-w64 gcc-mingw-w64
+          rustup target add x86_64-pc-windows-msvc
+          rustup target add x86_64-apple-darwin
 
       - name: Build for Linux
         run: cargo build --release --target x86_64-unknown-linux-gnu
@@ -34,10 +56,34 @@ jobs:
         run: cargo build --release --target x86_64-apple-darwin
 
       - name: Upload executables
-        uses: actions/upload-artifact@v3
+        if: needs.check_tag.outputs.is_release == 'true'
+        uses: actions/upload-artifact@v4
         with:
           name: binaries
           path: |
             target/x86_64-unknown-linux-gnu/release/drgrep
             target/x86_64-pc-windows-msvc/release/drgrep.exe
             target/x86_64-apple-darwin/release/drgrep
+
+  release:
+    needs: [check_tag, build]
+    if: needs.check_tag.outputs.is_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: binaries
+          path: binaries
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            binaries/drgrep
+            binaries/drgrep.exe
+            binaries/drgrep
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
