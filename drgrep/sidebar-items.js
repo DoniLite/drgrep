@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["run","search_insensitive_case","search_sensitive_case","search_word_insensitive_case","search_word_sensitive_case"],"mod":["args","color"],"struct":["Config","LinesInfo","SearchResult"]};
