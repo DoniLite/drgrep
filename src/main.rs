@@ -1,10 +1,12 @@
 use std::process;
 
-use drgrep::{print_colored, print_partial_colored, print_styled, run, Color, Config};
+use drgrep::{args::parser::ArgParser, print_colored, print_partial_colored, print_styled, run, Color, Config};
 
 fn main() {
 
-    let config = Config::new().unwrap_or_else(|err| {
+    let args = &ArgParser::new();
+
+    let config = Config::new(args).unwrap_or_else(|err| {
         eprintln!("error during the execuion {}", err);
         process::exit(1);
     });

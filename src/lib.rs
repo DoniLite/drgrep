@@ -1,5 +1,38 @@
+//! # drgrep
+//! 
+//! A Rust implementation of the grep software with more support and features for args, workspace scanning and CLI.
+//!
+//! ## Features
+//!
+//! * Recursive research
+//! * Command Lines Parser
+//! * Regex Utilities
+//! * CLI coloration
+//!
+//! ## Examples
+//!
+//! ```rust
+//! use drgrep::{args::parser::ArgParser, search_sensitive_case};
+//! 
+//! fn main() {
+//!     let args = ArgParser::new();
+//!     println!("Results: {:?}", args);
+//!     let search_key = "duct";
+//!     let content = "\
+//!Rust:
+//!sécurité, rapidité, productivité.
+//!Obtenez les trois en même temps.
+//!Duck tape.";
+//!     assert_eq!(
+//!     vec!["sécurité, rapidité, productivité."],
+//!     search_sensitive_case(search_key, content)
+//! );
+//! }
+//! ```
+
 pub mod color;
 pub mod args;
+pub mod regex;
 
 use std::{error::Error, fs, path};
 
@@ -10,10 +43,10 @@ pub use color::printer::print_partial_colored;
 
 /// The config struct
 #[derive(Debug)]
-pub struct Config {
-    pub search_key: String,
-    pub file_path: String,
-    pub files: Vec<String>,
+pub struct Config<'a> {
+    pub search_key: &'a str,
+    pub file_path:  &'a str,
+    pub files: Vec<&'a str>,
     pub sensitive: bool
 }
 
@@ -30,38 +63,28 @@ pub struct LinesInfo<'a> {
     pub end_index: usize,
 }
 
-impl Config {
-    pub fn new() -> Result<Self, &'static str> {
-        let args = args::parser::ArgParser::new();
-        // print!("{:?}", args);
-        let mut config = Config{
-            search_key: "".to_string(),
-            file_path: "".to_string(),
-            files: vec![],
-            sensitive: false
-        };
+impl<'a> Config<'a> {
+    pub fn new(args: &'a args::parser::ArgParser) -> Result<Self, &'static str> {
         if !args.has("key") {
-            return Err("no search key provided")
-        } else {
-            config.search_key = match args.get("key") {
-                Some(value) => {
-                    value.as_ref().unwrap().clone()
-                }
-                None => "".to_string()
-            }
+            return Err("no search key provided");
         }
+        let search_key = match args.get("key") {
+            Some(value) => value.as_str(),
+            None => return Err("key value not found")
+        };
+        
         if !args.has("source") {
-            return Err("no search key provided")
-        } else {
-            config.file_path = match args.get("source") {
-                Some(value) => {
-                    value.as_ref().unwrap().clone()
-                }
-                None => "".to_string()
-            }
+            return Err("no source is provided");
         }
-        // print!("{:?}", config);
-        Ok(config)
+        let file_path = match args.get("source") {
+            Some(value) => value.as_str(),
+            None => return Err("source value not found")
+        };
+        
+        let files = Vec::new();
+        let sensitive = false;
+        
+        Ok(Config { search_key, file_path, files, sensitive })
     }
 }
 

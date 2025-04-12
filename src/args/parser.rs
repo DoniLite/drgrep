@@ -24,15 +24,23 @@ impl ArgParser {
                 }
             } else if arg.starts_with("-") {
                 let key = arg.trim_start_matches("-").to_string();
-                args.insert(key, None);
+                if let Some(value) = iter.peek() {
+                    if !value.starts_with("-") {
+                        args.insert(key, Some(iter.next().unwrap()));
+                    } else {
+                        args.insert(key, None);
+                    }
+                } else {
+                    args.insert(key, None);
+                }
             }
         }
 
         Self { args }
     }
 
-    pub fn get(&self, key: &str) -> Option<&Option<String>> {
-        self.args.get(key)
+    pub fn get(&self, key: &str) -> &Option<String> {
+        self.args.get(key).unwrap()
     }
 
     pub fn has(&self, key: &str) -> bool {

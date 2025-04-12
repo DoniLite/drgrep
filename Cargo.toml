@@ -2,6 +2,14 @@
 name = "drgrep"
 version = "0.1.0"
 edition = "2021"
+license-file = "LICENSE"
+description = "A Rust implementation of the grep software with more support and features for args, workspace scanning and CLI"
+readme = "README.md"
+homepage = "https://donilite.github.io/drgrep/"
+repository = "https://github.com/DoniLite/drgrep"
+keywords = ["CLI", "grep", "crate"]
+categories = ["command-line-utilities", "command-line-interface"]
+include = ["src/**/*", "Cargo.toml", "LICENSE"]
 
 # Définition du binaire (exécutable)
 [[bin]]
