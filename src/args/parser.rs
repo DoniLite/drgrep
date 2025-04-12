@@ -40,7 +40,10 @@ impl ArgParser {
     }
 
     pub fn get(&self, key: &str) -> &Option<String> {
-        self.args.get(key).unwrap()
+        match self.args.get(key) {
+            Some(v) => v,
+            None => &None
+        }
     }
 
     pub fn has(&self, key: &str) -> bool {
