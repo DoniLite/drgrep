@@ -35,7 +35,6 @@ pub mod color;
 pub mod regex;
 
 use std::env;
-use std::io::Read;
 use std::path::Path;
 use std::{error::Error, fs, path};
 
@@ -82,10 +81,7 @@ impl<'a> Config<'a> {
         let split_search_key: Vec<&str> = search_key.split(',').collect();
         let file_path = match args.get("source") {
             Some(value) => Some(value.as_str()),
-            None => match args.get("s") {
-                Some(v) => Some(v.as_str()),
-                None => None,
-            },
+            None => args.get("s").as_ref().map(|v| v.as_str()),
         };
         let files = if split_search_key.len() >= 2 {
             Some(split_search_key)
@@ -121,29 +117,26 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     if let Some(val) = config.file_path {
         let file_path = path::Path::new(val);
         let content = fs::read_to_string(file_path)?;
-        for line in search_sensitive_case(&config.search_key, &content) {
+        for line in search_sensitive_case(config.search_key, &content) {
             println!("{}", line);
         }
     }
     let files = fs::read_dir(Path::new("./"))?;
-    files.for_each(|el| match el {
-        Ok(f) => match f.file_type() {
-            Ok(f_type) => {
-                if f_type.is_file() {
-                    match can_read_to_utf8(&f.path()) {
-                        Ok(content) => {
-                            // println!("file content {}", content);
-                            for line in search_sensitive_case(&config.search_key, &content) {
+    files.for_each(|el| {
+        if let Ok(f) = el {
+            utilities::visit_dirs(&f.path(), &|f| {
+                if let Ok(f_type) = f.file_type() {
+                    if f_type.is_file() {
+                        if let Ok(content) = utilities::can_read_to_utf8(&f.path()) {
+                            for line in search_sensitive_case(config.search_key, &content) {
                                 println!("{}", line);
                             }
-                        },
-                        Err(_) => ()
-                    };
+                        }
+                    }
                 }
-            }
-            Err(_) => (),
-        },
-        Err(_) => (),
+            })
+            .unwrap_or_else(|err| panic!("{}", err))
+        }
     });
     Ok(())
 }
@@ -212,11 +205,36 @@ pub fn search_word_insensitive_case<'a, 'b>(
     result
 }
 
-fn can_read_to_utf8(path: &Path) -> Result<String, Box<dyn Error>> {
-    let mut file = fs::File::open(path)?;
-    let mut buffer = Vec::new();
-    file.read_to_end(&mut buffer)?;
-    Ok(String::from_utf8(buffer)?)
+mod utilities {
+
+    use crate::Path;
+    use std::{
+        error::Error,
+        fs::{self, DirEntry},
+        io::{self, Read},
+    };
+
+    pub fn can_read_to_utf8(path: &Path) -> Result<String, Box<dyn Error>> {
+        let mut file = fs::File::open(path)?;
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer)?;
+        Ok(String::from_utf8(buffer)?)
+    }
+
+    pub fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry)) -> io::Result<()> {
+        if dir.is_dir() {
+            for entry in fs::read_dir(dir)? {
+                let entry = entry?;
+                let path = entry.path();
+                if path.is_dir() {
+                    visit_dirs(&path, cb)?;
+                } else {
+                    cb(&entry);
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 #[cfg(test)]

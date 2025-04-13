@@ -42,11 +42,17 @@ impl ArgParser {
     pub fn get(&self, key: &str) -> &Option<String> {
         match self.args.get(key) {
             Some(v) => v,
-            None => &None
+            None => &None,
         }
     }
 
     pub fn has(&self, key: &str) -> bool {
         self.args.contains_key(key)
+    }
+}
+
+impl Default for ArgParser  {
+    fn default() -> Self {
+        Self::new()
     }
 }

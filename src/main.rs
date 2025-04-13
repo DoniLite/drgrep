@@ -4,7 +4,7 @@ use drgrep::{args::parser::ArgParser, print_colored, print_partial_colored, prin
 
 fn main() {
 
-    let args = &ArgParser::new();
+    let args: &ArgParser = &Default::default();
 
     let config = Config::new(args).unwrap_or_else(|err| {
         eprintln!("error during the execuion {}", err);
