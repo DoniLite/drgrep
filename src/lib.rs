@@ -34,6 +34,7 @@ pub mod args;
 pub mod color;
 pub mod regex;
 
+use std::cell::RefCell;
 use std::env;
 use std::fs::ReadDir;
 use std::path::Path;
@@ -44,6 +45,11 @@ pub use color::config::Color;
 pub use color::printer::print_colored;
 pub use color::printer::print_partial_colored;
 pub use color::printer::print_styled;
+pub use regex::pattern::find;
+pub use regex::pattern::find_all;
+pub use regex::pattern::is_match;
+pub use regex::pattern::replace_all;
+pub use args::parser::ArgParser;
 
 /// The config struct
 #[derive(Debug)]
@@ -61,6 +67,7 @@ pub struct SearchResult<'a, 'b> {
     pub line: Vec<(&'a str, &'a str)>,
     pub word: &'b str,
     pub source: &'b str,
+    pub idx: usize,
 }
 
 pub static DEFAULT_MESSAGE: &str = "\
@@ -130,13 +137,7 @@ impl<'a> Config<'a> {
         };
         let search_content = match args.get("content") {
             Some(c) => Some(c.as_str()),
-            None => {
-                if let Some(v) = args.get("c") {
-                    Some(v.as_str())
-                } else {
-                    None
-                }
-            }
+            None => args.get("c").as_ref().map(|v| v.as_str()),
         };
         let sensitive = match args.get("sensitive") {
             Some(_) => true,
@@ -165,11 +166,33 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             let content = fs::read_to_string(file_path)?;
             if config.sensitive {
                 for result in search_word_sensitive_case(&config, val, &content) {
+                    print_colored!(
+                        format!("source: {}", result.source).as_str(),
+                        color::config::Color::BRIGHT_BLUE
+                    );
+                    println!();
+                    print_colored!(
+                        format!("line: {}", result.idx).as_str(),
+                        color::config::Color::RED
+                    );
+                    println!();
                     print_partial_colored!(&result.line);
+                    println!("===========================");
                 }
             } else {
                 for result in search_word_insensitive_case(&config, val, &content) {
+                    print_colored!(
+                        format!("source: {}", result.source).as_str(),
+                        color::config::Color::BRIGHT_BLUE
+                    );
+                    println!();
+                    print_colored!(
+                        format!("line: {}", result.idx).as_str(),
+                        color::config::Color::RED
+                    );
+                    println!();
                     print_partial_colored!(&result.line);
+                    println!("===========================");
                 }
             }
             return Ok(());
@@ -194,7 +217,18 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                                     f.path().to_str().unwrap(),
                                     &content,
                                 ) {
+                                    print_colored!(
+                                        format!("source: {}", result.source).as_str(),
+                                        color::config::Color::BRIGHT_BLUE
+                                    );
+                                    println!();
+                                    print_colored!(
+                                        format!("line: {}", result.idx).as_str(),
+                                        color::config::Color::RED
+                                    );
+                                    println!();
                                     print_partial_colored!(&result.line);
+                                    println!("===========================");
                                 }
                             } else {
                                 for result in search_word_insensitive_case(
@@ -202,7 +236,18 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                                     f.path().to_str().unwrap(),
                                     &content,
                                 ) {
+                                    print_colored!(
+                                        format!("source: {}", result.source).as_str(),
+                                        color::config::Color::BRIGHT_BLUE
+                                    );
+                                    println!();
+                                    print_colored!(
+                                        format!("line: {}", result.idx).as_str(),
+                                        color::config::Color::RED
+                                    );
+                                    println!();
                                     print_partial_colored!(&result.line);
+                                    println!("===========================");
                                 }
                             }
                         }
@@ -238,9 +283,15 @@ pub fn search_word_sensitive_case<'a, 'b>(
     content: &'a str,
 ) -> Vec<SearchResult<'a, 'b>> {
     let shared_config = Rc::new(config);
+    // Used to count the number of the content lines
+    // This value is incremented
+    let occ = Rc::new(RefCell::new(0));
     content
         .lines()
-        .filter(|l| l.contains(&Rc::clone(&shared_config).search_key))
+        .filter(|l| {
+            *Rc::clone(&occ).borrow_mut() += 1;
+            l.contains(Rc::clone(&shared_config).search_key)
+        })
         .map(|line| {
             let conf = Rc::clone(&shared_config);
             let parts = line
@@ -258,6 +309,7 @@ pub fn search_word_sensitive_case<'a, 'b>(
                 line: parts,
                 word: conf.search_key,
                 source,
+                idx: *Rc::clone(&occ).borrow(),
             }
         })
         .collect()
@@ -269,9 +321,13 @@ pub fn search_word_insensitive_case<'a, 'b>(
     content: &'a str,
 ) -> Vec<SearchResult<'a, 'b>> {
     let shared_config = Rc::new(config);
+    // Used to count the number of the content lines
+    // This value is incremented
+    let occ = Rc::new(RefCell::new(0));
     content
         .lines()
         .filter(|l| {
+            *Rc::clone(&occ).borrow_mut() += 1;
             l.to_lowercase()
                 .contains(&Rc::clone(&shared_config).search_key.to_lowercase())
         })
@@ -294,6 +350,7 @@ pub fn search_word_insensitive_case<'a, 'b>(
                 line: parts,
                 word: conf.search_key,
                 source,
+                idx: *Rc::clone(&occ).borrow(),
             }
         })
         .collect()
