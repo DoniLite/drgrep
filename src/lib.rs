@@ -50,6 +50,7 @@ pub use regex::pattern::find;
 pub use regex::pattern::find_all;
 pub use regex::pattern::is_match;
 pub use regex::pattern::replace_all;
+use regex::pattern::SimplePattern;
 
 /// The config struct
 #[derive(Debug)]
@@ -92,7 +93,7 @@ impl<'a> Config<'a> {
             Some(value) => Some(value.as_str()),
             None => match args.get("k") {
                 Some(v) => Some(v.as_str()),
-                None => return Err("key value not found"),
+                None => None,
             },
         };
         let split_search_key: Vec<&str>;
@@ -181,6 +182,23 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         if let Some(val) = config.file_path {
             let file_path = path::Path::new(val);
             let content = fs::read_to_string(file_path)?;
+            if let Some(reg) = config.regex {
+                for result in search_with_regex(&reg, val, &content) {
+                    print_colored!(
+                        format!("source: {}", result.source).as_str(),
+                        color::config::Color::BRIGHT_BLUE
+                    );
+                    println!();
+                    print_colored!(
+                        format!("line: {}", result.idx).as_str(),
+                        color::config::Color::RED
+                    );
+                    println!();
+                    print_partial_colored!(&result.line);
+                    println!("===========================");
+                }
+                return Ok(());
+            }
             if config.sensitive {
                 if let Some(key) = config.search_key {
                     for result in search_word_sensitive_case(key, val, &content) {
@@ -232,6 +250,25 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                 if let Ok(f_type) = f.file_type() {
                     if f_type.is_file() {
                         if let Ok(content) = utilities::can_read_to_utf8(&f.path()) {
+                            if let Some(reg) = &config.regex {
+                                for result in
+                                    search_with_regex(&reg, f.path().to_str().unwrap(), &content)
+                                {
+                                    print_colored!(
+                                        format!("source: {}", result.source).as_str(),
+                                        color::config::Color::BRIGHT_BLUE
+                                    );
+                                    println!();
+                                    print_colored!(
+                                        format!("line: {}", result.idx).as_str(),
+                                        color::config::Color::RED
+                                    );
+                                    println!();
+                                    print_partial_colored!(&result.line);
+                                    println!("===========================");
+                                }
+                                return;
+                            }
                             if config.sensitive {
                                 if let Some(key) = config.search_key {
                                     for result in search_word_sensitive_case(
@@ -380,6 +417,42 @@ pub fn search_word_insensitive_case<'a, 'b>(
         .collect()
 }
 
+pub fn search_with_regex<'a, 'b>(
+    regex: &SimplePattern,
+    source: &'b str,
+    content: &'a str,
+) -> Vec<SearchResult<'a, 'b>> {
+    let occ = Rc::new(RefCell::new(0));
+    let shared_regex = Rc::new(regex);
+    content
+        .lines()
+        .filter(|l| {
+            *Rc::clone(&occ).borrow_mut() += 1;
+            let r = Rc::clone(&shared_regex);
+            r.is_match(l)
+        })
+        .map(|line| {
+            let r = Rc::clone(&shared_regex);
+            let parts = line
+                .split(' ')
+                .map(|w| {
+                    if r.is_match(w.to_lowercase().as_str()) {
+                        (w, color::config::Color::BRIGHT_YELLOW)
+                    } else {
+                        (w, color::config::Color::WHITE)
+                    }
+                })
+                .collect();
+            SearchResult {
+                line: parts,
+                word: "",
+                source,
+                idx: *Rc::clone(&occ).borrow(),
+            }
+        })
+        .collect()
+}
+
 mod utilities {
 
     use crate::Path;
@@ -461,7 +534,10 @@ Rust:
 sécurité, rapidité, productivité.
 Obtenez les trois en même temps.
 C'est pas rustique.";
-        assert_eq!(1, search_word_sensitive_case(config.search_key.unwrap(), "", content).len());
+        assert_eq!(
+            1,
+            search_word_sensitive_case(config.search_key.unwrap(), "", content).len()
+        );
     }
 
     #[test]

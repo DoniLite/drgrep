@@ -60,66 +60,41 @@ The basic syntax is:
 drgrep [ARGS]
 ```
 
-Bash
-<PATTERN>: The (simplified) regex pattern to search for.
-[FILE...]: One or more files to search within. If no file is specified, drgrep reads from standard input (stdin).
 Examples:
+
+### Basic Regex searching in the `.github/`
+
+```sh
+cargo run -- -r Rust -p ./.github
+```
+
+Output: ![image](./assets/Capture%20d’écran%20du%202025-04-17%2020-40-36.png)
 
 ### Find "error" in the application.log file
 
-```bash
+```sh
 drgrep -k error -p application.log
 ```
 
-### Find lines starting with a timestamp (e.g., 2023-...) in multiple log files
+### Find 5-letter words in a file (requires supported syntax)
 
-drgrep "^\\d{4}-" service1.log service2.log
+```sh
+drgrep -r \\w\\w\\w\\w\\w -p document.txt
+```
 
-# NOTE: {n} might not be supported; use \d\d\d\d- if needed
+### Using with a pipe
 
-# Find 5-letter words in a file (requires supported syntax)
+```sh
+cat data.txt | drgrep -k important data
+```
 
-drgrep "\\w\\w\\w\\w\\w" document.txt
-
-# Using with a pipe
-
-cat data.txt | drgrep "important data"
-
-# Searching for a pattern containing spaces (use quotes)
-
-drgrep "user login" auth.log
-Use code with caution.
-Bash
-(Add other relevant options and examples for your tool here, such as recursive search, case-insensitivity, etc., if you implement them).
-💡 Supported Regex Syntax
-drgrep uses a simplified regular expression engine. Only the following features are currently supported:
-Symbol Description Example Matches
-. Any single character a.c abc, axc
-\d Digit (0-9) \d+ 123, 9
-\w Word character (alphanumeric + _) \w+ word,_123
-\s Whitespace character hello\sworld hello world
-\D Non-digit \D a,
-\W Non-word character \W !,
-\S Non-whitespace character \S+ word, 123
-
-* Zero or more occurrences ab*c ac, abc, abbc
-
-* One or more occurrences ab+c abc, abbc
-? Zero or one occurrence ab?c ac, abc
-^ Start of line anchor ^Start Start here
-$ End of line anchor end$ This is the end
-\ Escape character \. . (literal)
-Unsupported Features (non-exhaustive list):
-Capturing groups (...)
-Alternation | (OR logic)
-Specific quantifiers {n}, {n,}, {n,m}
-Custom character classes [...], [^...]
-Lookarounds (lookahead (?=...), lookbehind (?<=...))
-Backreferences \1
-Inline case-insensitivity options (?i) (may be available via a CLI flag)
 And other advanced regex features...
-🌱 Contributing
+
+## 🌱 Contributing
+
 Contributions are welcome! Feel free to open an Issue to report a bug or suggest an improvement, or a Pull Request with your changes.
 Please follow standard open-source contribution practices.
-📜 License
+
+## 📜 License
+
 This project is distributed under the MIT License. See the LICENSE file for more details.

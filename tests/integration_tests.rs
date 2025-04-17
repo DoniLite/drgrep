@@ -1,8 +1,8 @@
 // tests/integration_test.rs
 
 use drgrep::{
-    args::parser::ArgParser, regex::pattern::SimplePattern, search_insensitive_case, search_sensitive_case,
-    Config,
+    args::parser::ArgParser, regex::pattern::SimplePattern, search_insensitive_case,
+    search_sensitive_case, Config,
 };
 use std::collections::HashMap;
 
@@ -32,9 +32,7 @@ fn test_config_creation() {
     args_map.insert("path".to_string(), Some("./src".to_string()));
     args_map.insert("sensitive".to_string(), Some("true".to_string()));
 
-    let args = ArgParser {
-        args: args_map,
-    };
+    let args = ArgParser { args: args_map };
 
     // Create config from args
     let config = Config::new(&args).unwrap();
@@ -50,21 +48,21 @@ fn test_config_creation() {
 fn test_pattern_usage() {
     // Test pattern creation and matching
     let pattern = SimplePattern::new("\\w+").unwrap();
-    
+
     assert!(pattern.is_match("Hello"));
     assert!(!pattern.is_match(" "));
-    
+
     // Test find functionality
     let text = "Hello, World!";
     let result = pattern.find(text).unwrap();
     assert_eq!("Hello", result.text);
-    
+
     // Test find_all functionality
     let results = pattern.find_all(text);
     assert_eq!(2, results.len());
     assert_eq!("Hello", results[0].text);
     assert_eq!("World", results[1].text);
-    
+
     // Test replace functionality
     let replaced = pattern.replace_all(text, "TEXT");
     assert_eq!("TEXT, TEXT!", replaced);
@@ -77,9 +75,7 @@ fn test_config_with_regex() {
     args_map.insert("key".to_string(), Some("test".to_string()));
     args_map.insert("regex".to_string(), Some("\\w+".to_string()));
 
-    let args = ArgParser {
-        args: args_map,
-    };
+    let args = ArgParser { args: args_map };
 
     // Create config from args
     let config = Config::new(&args).unwrap();
@@ -97,9 +93,7 @@ fn test_multiple_search_terms() {
     let mut args_map = HashMap::new();
     args_map.insert("key".to_string(), Some("term1,term2,term3".to_string()));
 
-    let args = ArgParser {
-        args: args_map,
-    };
+    let args = ArgParser { args: args_map };
 
     // Create config from args
     let config = Config::new(&args).unwrap();
@@ -117,21 +111,19 @@ fn test_multiple_search_terms() {
 fn test_error_handling() {
     // Test missing key argument
     let args = ArgParser {
-        args: HashMap::new()
+        args: HashMap::new(),
     };
 
     let result = Config::new(&args);
     assert!(result.is_err());
-    assert_eq!("no search key provided", result.unwrap_err());
+    assert_eq!("no search key/regex provided", result.unwrap_err());
 
     // Test invalid regex pattern
     let mut args_map = HashMap::new();
     args_map.insert("key".to_string(), Some("test".to_string()));
     args_map.insert("regex".to_string(), Some("*invalid".to_string())); // Invalid pattern (starts with quantifier)
 
-    let args = ArgParser {
-        args: args_map,
-    };
+    let args = ArgParser { args: args_map };
 
     let result = Config::new(&args);
     assert!(result.is_err());

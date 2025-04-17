@@ -7,7 +7,7 @@ use drgrep::{
 fn main() {
     let args: &ArgParser = &Default::default();
 
-    let config = Config::new(args).unwrap_or_else(|_| {
+    let config = Config::new(args).unwrap_or_else(|_: &str| {
         println!("{}", DEFAULT_MESSAGE);
         process::exit(1);
     });
