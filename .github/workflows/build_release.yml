@@ -76,6 +76,8 @@ jobs:
           path: artifacts/${{ matrix.binary_name }}${{ matrix.executable_extension }}
 
   release:
+    permissions:
+      contents: write
     needs: [check_tag, build]
     if: needs.check_tag.outputs.is_release == 'true'
     runs-on: ubuntu-latest
