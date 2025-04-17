@@ -1,7 +1,5 @@
 use crate::color::config::Color;
 
-
-
 pub fn print_colored(text: &str, color: &str) {
     println!("{}{}{}", color, text, Color::RESET);
 }
@@ -16,4 +14,25 @@ pub fn print_partial_colored(parts: &[(&str, &str)]) {
         print!("{}{}{}", color, text, Color::RESET);
     }
     println!(); // saut de ligne à la fin
+}
+
+#[macro_export]
+macro_rules! print_colored {
+    ($($arg:tt)* ) => {{
+        $crate::print_colored($($arg)*)
+    }};
+}
+
+#[macro_export]
+macro_rules! print_styled {
+    ($($arg:tt)* ) => {{
+        $crate::print_styled($($arg)*)
+    }};
+}
+
+#[macro_export]
+macro_rules! print_partial_colored {
+    ($($arg:tt)* ) => {{
+        $crate::print_partial_colored($($arg)*)
+    }};
 }
