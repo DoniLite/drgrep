@@ -40,7 +40,7 @@ fn test_config_creation() {
     let config = Config::new(&args).unwrap();
 
     // Test values
-    assert_eq!("test", config.search_key);
+    assert_eq!("test", config.search_key.unwrap());
     assert_eq!(Some("./src"), config.file_path);
     assert!(config.sensitive);
     assert!(config.files.is_none());

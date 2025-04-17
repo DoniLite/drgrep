@@ -41,6 +41,7 @@ use std::path::Path;
 use std::rc::Rc;
 use std::{error::Error, fs, path};
 
+pub use args::parser::ArgParser;
 pub use color::config::Color;
 pub use color::printer::print_colored;
 pub use color::printer::print_partial_colored;
@@ -49,12 +50,11 @@ pub use regex::pattern::find;
 pub use regex::pattern::find_all;
 pub use regex::pattern::is_match;
 pub use regex::pattern::replace_all;
-pub use args::parser::ArgParser;
 
 /// The config struct
 #[derive(Debug)]
 pub struct Config<'a> {
-    pub search_key: &'a str,
+    pub search_key: Option<&'a str>,
     pub search_content: Option<&'a str>,
     pub file_path: Option<&'a str>,
     pub files: Option<Vec<&'a str>>,
@@ -71,28 +71,35 @@ pub struct SearchResult<'a, 'b> {
 }
 
 pub static DEFAULT_MESSAGE: &str = "\
-drgep is a CLI searching tool
+drgrep is a CLI searching tool
 Usage:
-grgrep [args]
+drgrep [args]
 
 [args]
 -k key <optional:false> => The word that you want to search
 -p path <optional:true>, <default: '/'> => The path of the file which you want to provide searching
+-r regex <optional:true> => The regex expression to use for matching
+-c content <optional:true> => The content in which the program will process can be provided as string
+-s sensitive <optional:true> => Use this to setup a sensitive case config you can use it with the env variables via : [DRGREP_SENSITIVE_CASE]
 ";
 
 impl<'a> Config<'a> {
     pub fn new(args: &'a args::parser::ArgParser) -> Result<Self, &'static str> {
-        if !args.has("key") && !args.has("k") {
-            return Err("no search key provided");
+        if !args.has("key") && !args.has("k") && !args.has("regex") && !args.has("r") {
+            return Err("no search key/regex provided");
         }
         let search_key = match args.get("key") {
-            Some(value) => value.as_str(),
+            Some(value) => Some(value.as_str()),
             None => match args.get("k") {
-                Some(v) => v.as_str(),
+                Some(v) => Some(v.as_str()),
                 None => return Err("key value not found"),
             },
         };
-        let split_search_key: Vec<&str> = search_key.split(',').collect();
+        let split_search_key: Vec<&str>;
+        match search_key {
+            Some(k) => split_search_key = k.split(',').collect(),
+            None => split_search_key = vec![],
+        }
         let mut is_dir = false;
         let file_path = match args.get("path") {
             Some(value) => {
@@ -129,11 +136,21 @@ impl<'a> Config<'a> {
             None
         };
         let regex = match args.get("regex") {
-            Some(value) => match regex::pattern::SimplePattern::new(value) {
+            Some(value) => match regex::pattern::SimplePattern::new(&value) {
                 Ok(val) => Some(val),
                 Err(_) => return Err("Error during the creating of the current regex"),
             },
-            None => None,
+            None => {
+                if let Some(value) = args.get("r") {
+                    if let Ok(r) = regex::pattern::SimplePattern::new(&value) {
+                        Some(r)
+                    } else {
+                        return Err("Error during the creating of the current regex");
+                    }
+                } else {
+                    None
+                }
+            }
         };
         let search_content = match args.get("content") {
             Some(c) => Some(c.as_str()),
@@ -165,34 +182,38 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             let file_path = path::Path::new(val);
             let content = fs::read_to_string(file_path)?;
             if config.sensitive {
-                for result in search_word_sensitive_case(&config, val, &content) {
-                    print_colored!(
-                        format!("source: {}", result.source).as_str(),
-                        color::config::Color::BRIGHT_BLUE
-                    );
-                    println!();
-                    print_colored!(
-                        format!("line: {}", result.idx).as_str(),
-                        color::config::Color::RED
-                    );
-                    println!();
-                    print_partial_colored!(&result.line);
-                    println!("===========================");
+                if let Some(key) = config.search_key {
+                    for result in search_word_sensitive_case(key, val, &content) {
+                        print_colored!(
+                            format!("source: {}", result.source).as_str(),
+                            color::config::Color::BRIGHT_BLUE
+                        );
+                        println!();
+                        print_colored!(
+                            format!("line: {}", result.idx).as_str(),
+                            color::config::Color::RED
+                        );
+                        println!();
+                        print_partial_colored!(&result.line);
+                        println!("===========================");
+                    }
                 }
             } else {
-                for result in search_word_insensitive_case(&config, val, &content) {
-                    print_colored!(
-                        format!("source: {}", result.source).as_str(),
-                        color::config::Color::BRIGHT_BLUE
-                    );
-                    println!();
-                    print_colored!(
-                        format!("line: {}", result.idx).as_str(),
-                        color::config::Color::RED
-                    );
-                    println!();
-                    print_partial_colored!(&result.line);
-                    println!("===========================");
+                if let Some(key) = config.search_key {
+                    for result in search_word_insensitive_case(key, val, &content) {
+                        print_colored!(
+                            format!("source: {}", result.source).as_str(),
+                            color::config::Color::BRIGHT_BLUE
+                        );
+                        println!();
+                        print_colored!(
+                            format!("line: {}", result.idx).as_str(),
+                            color::config::Color::RED
+                        );
+                        println!();
+                        print_partial_colored!(&result.line);
+                        println!("===========================");
+                    }
                 }
             }
             return Ok(());
@@ -212,42 +233,46 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                     if f_type.is_file() {
                         if let Ok(content) = utilities::can_read_to_utf8(&f.path()) {
                             if config.sensitive {
-                                for result in search_word_sensitive_case(
-                                    &config,
-                                    f.path().to_str().unwrap(),
-                                    &content,
-                                ) {
-                                    print_colored!(
-                                        format!("source: {}", result.source).as_str(),
-                                        color::config::Color::BRIGHT_BLUE
-                                    );
-                                    println!();
-                                    print_colored!(
-                                        format!("line: {}", result.idx).as_str(),
-                                        color::config::Color::RED
-                                    );
-                                    println!();
-                                    print_partial_colored!(&result.line);
-                                    println!("===========================");
+                                if let Some(key) = config.search_key {
+                                    for result in search_word_sensitive_case(
+                                        key,
+                                        f.path().to_str().unwrap(),
+                                        &content,
+                                    ) {
+                                        print_colored!(
+                                            format!("source: {}", result.source).as_str(),
+                                            color::config::Color::BRIGHT_BLUE
+                                        );
+                                        println!();
+                                        print_colored!(
+                                            format!("line: {}", result.idx).as_str(),
+                                            color::config::Color::RED
+                                        );
+                                        println!();
+                                        print_partial_colored!(&result.line);
+                                        println!("===========================");
+                                    }
                                 }
                             } else {
-                                for result in search_word_insensitive_case(
-                                    &config,
-                                    f.path().to_str().unwrap(),
-                                    &content,
-                                ) {
-                                    print_colored!(
-                                        format!("source: {}", result.source).as_str(),
-                                        color::config::Color::BRIGHT_BLUE
-                                    );
-                                    println!();
-                                    print_colored!(
-                                        format!("line: {}", result.idx).as_str(),
-                                        color::config::Color::RED
-                                    );
-                                    println!();
-                                    print_partial_colored!(&result.line);
-                                    println!("===========================");
+                                if let Some(key) = config.search_key {
+                                    for result in search_word_insensitive_case(
+                                        key,
+                                        f.path().to_str().unwrap(),
+                                        &content,
+                                    ) {
+                                        print_colored!(
+                                            format!("source: {}", result.source).as_str(),
+                                            color::config::Color::BRIGHT_BLUE
+                                        );
+                                        println!();
+                                        print_colored!(
+                                            format!("line: {}", result.idx).as_str(),
+                                            color::config::Color::RED
+                                        );
+                                        println!();
+                                        print_partial_colored!(&result.line);
+                                        println!("===========================");
+                                    }
                                 }
                             }
                         }
@@ -278,11 +303,11 @@ pub fn search_insensitive_case<'a>(search_content: &str, content: &'a str) -> Ve
 }
 
 pub fn search_word_sensitive_case<'a, 'b>(
-    config: &'a Config<'b>,
+    key: &'b str,
     source: &'b str,
     content: &'a str,
 ) -> Vec<SearchResult<'a, 'b>> {
-    let shared_config = Rc::new(config);
+    let shared_key = Rc::new(key);
     // Used to count the number of the content lines
     // This value is incremented
     let occ = Rc::new(RefCell::new(0));
@@ -290,14 +315,14 @@ pub fn search_word_sensitive_case<'a, 'b>(
         .lines()
         .filter(|l| {
             *Rc::clone(&occ).borrow_mut() += 1;
-            l.contains(Rc::clone(&shared_config).search_key)
+            l.contains(*Rc::clone(&shared_key))
         })
         .map(|line| {
-            let conf = Rc::clone(&shared_config);
+            let key = Rc::clone(&shared_key);
             let parts = line
                 .split(' ')
                 .map(|w| {
-                    let pattern = regex::pattern::SimplePattern::new(conf.search_key).unwrap();
+                    let pattern = regex::pattern::SimplePattern::new(&key).unwrap();
                     if pattern.is_match(w) {
                         (w, color::config::Color::BRIGHT_YELLOW)
                     } else {
@@ -307,7 +332,7 @@ pub fn search_word_sensitive_case<'a, 'b>(
                 .collect();
             SearchResult {
                 line: parts,
-                word: conf.search_key,
+                word: &key,
                 source,
                 idx: *Rc::clone(&occ).borrow(),
             }
@@ -316,11 +341,11 @@ pub fn search_word_sensitive_case<'a, 'b>(
 }
 
 pub fn search_word_insensitive_case<'a, 'b>(
-    config: &'a Config<'b>,
+    key: &'b str,
     source: &'b str,
     content: &'a str,
 ) -> Vec<SearchResult<'a, 'b>> {
-    let shared_config = Rc::new(config);
+    let shared_key = Rc::new(key);
     // Used to count the number of the content lines
     // This value is incremented
     let occ = Rc::new(RefCell::new(0));
@@ -329,16 +354,15 @@ pub fn search_word_insensitive_case<'a, 'b>(
         .filter(|l| {
             *Rc::clone(&occ).borrow_mut() += 1;
             l.to_lowercase()
-                .contains(&Rc::clone(&shared_config).search_key.to_lowercase())
+                .contains(&Rc::clone(&shared_key).to_lowercase())
         })
         .map(|line| {
-            let conf = Rc::clone(&shared_config);
+            let key = Rc::clone(&shared_key);
             let parts = line
                 .split(' ')
                 .map(|w| {
                     let pattern =
-                        regex::pattern::SimplePattern::new(conf.search_key.to_lowercase().as_str())
-                            .unwrap();
+                        regex::pattern::SimplePattern::new(key.to_lowercase().as_str()).unwrap();
                     if pattern.is_match(w.to_lowercase().as_str()) {
                         (w, color::config::Color::BRIGHT_YELLOW)
                     } else {
@@ -348,7 +372,7 @@ pub fn search_word_insensitive_case<'a, 'b>(
                 .collect();
             SearchResult {
                 line: parts,
-                word: conf.search_key,
+                word: &key,
                 source,
                 idx: *Rc::clone(&occ).borrow(),
             }
@@ -426,7 +450,7 @@ C'est pas rustique.";
         let config = Config {
             search_content: None,
             file_path: None,
-            search_key: recherche,
+            search_key: Some(recherche),
             files: None,
             regex: None,
             sensitive: true,
@@ -437,7 +461,7 @@ Rust:
 sécurité, rapidité, productivité.
 Obtenez les trois en même temps.
 C'est pas rustique.";
-        assert_eq!(1, search_word_sensitive_case(&config, "", content).len());
+        assert_eq!(1, search_word_sensitive_case(config.search_key.unwrap(), "", content).len());
     }
 
     #[test]
@@ -446,7 +470,7 @@ C'est pas rustique.";
         let config = Config {
             search_content: None,
             file_path: None,
-            search_key: recherche,
+            search_key: Some(recherche),
             files: None,
             regex: None,
             sensitive: true,
@@ -459,7 +483,7 @@ Obtenez les trois en même temps.
 C'est pas rustique.";
         assert_eq!(
             vec![("Rust:", color::config::Color::BRIGHT_YELLOW)],
-            search_word_insensitive_case(&config, recherche, content)[0].line
+            search_word_insensitive_case(config.search_key.unwrap(), recherche, content)[0].line
         );
     }
 }
