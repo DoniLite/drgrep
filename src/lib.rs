@@ -344,34 +344,27 @@ pub fn search_word_sensitive_case<'a, 'b>(
     source: &'b str,
     content: &'a str,
 ) -> Vec<SearchResult<'a, 'b>> {
-    let shared_key = Rc::new(key);
-    // Used to count the number of the content lines
-    // This value is incremented
-    let occ = Rc::new(RefCell::new(0));
     content
         .lines()
-        .filter(|l| {
-            *Rc::clone(&occ).borrow_mut() += 1;
-            l.contains(*Rc::clone(&shared_key))
-        })
-        .map(|line| {
-            let key = Rc::clone(&shared_key);
-            let parts = line
-                .split(' ')
+        .enumerate() // Provides a line index automatically
+        .filter(|(_, line)| line.contains(key))
+        .map(|(idx, line)| {
+            // For example, split the line and highlight matching words
+            let parts = line.split(' ')
                 .map(|w| {
-                    let pattern = regex::pattern::SimplePattern::new(&key).unwrap();
-                    if pattern.is_match(w) {
-                        (w, color::config::Color::BRIGHT_YELLOW)
+                    let color = if w.contains(key) {
+                        color::config::Color::BRIGHT_YELLOW
                     } else {
-                        (w, color::config::Color::WHITE)
-                    }
+                        color::config::Color::WHITE
+                    };
+                    (w, color)
                 })
                 .collect();
             SearchResult {
                 line: parts,
-                word: &key,
+                word: key,
                 source,
-                idx: *Rc::clone(&occ).borrow(),
+                idx: idx + 1, // Using one-based line numbers
             }
         })
         .collect()
