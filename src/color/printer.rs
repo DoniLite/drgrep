@@ -1,5 +1,7 @@
 use crate::color::config::Color;
 
+pub type TextParts<'a> = &'a Vec<(&'a str, &'a str)>;
+
 pub fn print_colored(text: &str, color: &str) {
     println!("{}{}{}", color, text, Color::RESET);
 }
@@ -9,9 +11,9 @@ pub fn print_styled(text: &str, style: &str, color: &str) {
 }
 
 /// Affiche plusieurs parties de texte avec leur couleur respective
-pub fn print_partial_colored(parts: &[(&str, &str)]) {
+pub fn print_partial_colored(parts: TextParts) {
     for (text, color) in parts {
-        print!("{}{}{}", color, text, Color::RESET);
+        print!("{}{}{} ", color, text, Color::RESET);
     }
     println!(); // saut de ligne à la fin
 }
