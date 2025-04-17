@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["print_colored","print_partial_colored","print_styled"]};
+window.SIDEBAR_ITEMS = {"fn":["print_colored","print_partial_colored","print_styled"],"type":["TextParts"]};

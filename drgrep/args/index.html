@@ -1,1 +1,59 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="API documentation for the Rust `args` mod in crate `drgrep`."><title>drgrep::args - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-6c3ea77c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="drgrep" data-themes="" data-resource-suffix="" data-rustdoc-version="1.86.0 (05f9846f8 2025-03-31)" data-channel="1.86.0" data-search-js="search-581efc7a.js" data-settings-js="settings-6dad6058.js" ><script src="../../static.files/storage-3a5871a4.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-4d63596a.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../drgrep/index.html">drgrep</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module args</a></h2><h3><a href="#modules">Module Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate drgrep</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">drgrep</a></div><h1>Module <span>args</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/drgrep/args/mod.rs.html#3">Source</a> </span></div><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="parser/index.html" title="mod drgrep::args::parser">parser</a></dt></dl></section></div></main></body></html>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="ArgParser Module"><title>drgrep::args - Rust</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Italic-81dc35de.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-MediumItalic-ccf7e434.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-6c3ea77c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="drgrep" data-themes="" data-resource-suffix="" data-rustdoc-version="1.86.0 (05f9846f8 2025-03-31)" data-channel="1.86.0" data-search-js="search-581efc7a.js" data-settings-js="settings-6dad6058.js" ><script src="../../static.files/storage-3a5871a4.js"></script><script defer src="../sidebar-items.js"></script><script defer src="../../static.files/main-4d63596a.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc mod"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle" title="show sidebar"></button></nav><nav class="sidebar"><div class="sidebar-crate"><h2><a href="../../drgrep/index.html">drgrep</a><span class="version">0.1.0</span></h2></div><div class="sidebar-elems"><section id="rustdoc-toc"><h2 class="location"><a href="#">Module args</a></h2><h3><a href="#">Sections</a></h3><ul class="block top-toc"><li><a href="#argparser-module" title="ArgParser Module">ArgParser Module</a><ul><li><a href="#features" title="Features">Features</a></li><li><a href="#installation" title="Installation">Installation</a></li><li><a href="#usage" title="Usage">Usage</a></li><li><a href="#command-line-examples" title="Command Line Examples">Command Line Examples</a></li><li><a href="#current-limitations" title="Current Limitations">Current Limitations</a></li><li><a href="#contributing" title="Contributing">Contributing</a></li><li><a href="#license" title="License">License</a></li></ul></li></ul><h3><a href="#modules">Module Items</a></h3><ul class="block"><li><a href="#modules" title="Modules">Modules</a></li></ul></section><div id="rustdoc-modnav"><h2 class="in-crate"><a href="../index.html">In crate drgrep</a></h2></div></div></nav><div class="sidebar-resizer"></div><main><div class="width-limiter"><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><div class="rustdoc-breadcrumbs"><a href="../index.html">drgrep</a></div><h1>Module <span>args</span><button id="copy-path" title="Copy item path to clipboard">Copy item path</button></h1><rustdoc-toolbar></rustdoc-toolbar><span class="sub-heading"><a class="src" href="../../src/drgrep/args/mod.rs.html#1-81">Source</a> </span></div><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><h2 id="argparser-module"><a class="doc-anchor" href="#argparser-module">§</a>ArgParser Module</h2>
+<p>A simple and lightweight command-line argument parser for Rust applications.</p>
+<h3 id="features"><a class="doc-anchor" href="#features">§</a>Features</h3>
+<ul>
+<li>Parses command-line arguments in short (<code>-a</code>) and long (<code>--argument</code>) format</li>
+<li>Supports arguments with or without values</li>
+<li>Simple and intuitive interface</li>
+<li>No external dependencies</li>
+</ul>
+<h3 id="installation"><a class="doc-anchor" href="#installation">§</a>Installation</h3>
+<p>Add this dependency to your <code>Cargo.toml</code> file:</p>
+<div class="example-wrap"><pre class="language-toml"><code>[dependencies]
+drgrep = &quot;0.1.0&quot;</code></pre></div><h3 id="usage"><a class="doc-anchor" href="#usage">§</a>Usage</h3>
+<div class="example-wrap"><pre class="rust rust-example-rendered"><code><span class="kw">use </span>drgrep::ArgParser;
+
+<span class="kw">fn </span>main() {
+   <span class="comment">// Initialize the parser (automatically parses command-line arguments)
+   </span><span class="kw">let </span>args = ArgParser::new();
+
+   <span class="comment">// Check if a flag is present
+   </span><span class="kw">if </span>args.has(<span class="string">"verbose"</span>) || args.has(<span class="string">"v"</span>) {
+       <span class="macro">println!</span>(<span class="string">"Verbose mode enabled"</span>);
+   }
+
+   <span class="comment">// Get the value of an argument
+   </span><span class="kw">match </span>args.get(<span class="string">"file"</span>) {
+       <span class="prelude-val">Some</span>(file_path) =&gt; <span class="macro">println!</span>(<span class="string">"Using file: {}"</span>, file_path),
+       <span class="prelude-val">None </span>=&gt; {
+           <span class="kw">if </span>args.has(<span class="string">"file"</span>) {
+               <span class="macro">println!</span>(<span class="string">"The --file option was specified without a value"</span>);
+           } <span class="kw">else </span>{
+               <span class="macro">println!</span>(<span class="string">"No file specified"</span>);
+           }
+       }
+   }
+}</code></pre></div>
+<h3 id="command-line-examples"><a class="doc-anchor" href="#command-line-examples">§</a>Command Line Examples</h3>
+<p>The parser supports the following argument formats:</p>
+<div class="example-wrap"><pre class="language-sh"><code># Arguments without values (flags)
+$ ./my_program --verbose
+$ ./my_program -v
+
+# Arguments with values
+$ ./my_program --file test.txt
+$ ./my_program -f test.txt
+
+# Combination of arguments
+$ ./my_program --verbose --file test.txt -o output.log</code></pre></div><h3 id="current-limitations"><a class="doc-anchor" href="#current-limitations">§</a>Current Limitations</h3>
+<ul>
+<li>No support for positional arguments (not preceded by <code>-</code> or <code>--</code>)</li>
+<li>No support for grouped arguments (like <code>-abc</code> for <code>-a -b -c</code>)</li>
+<li>No support for arguments with values in the form <code>--key=value</code></li>
+<li>No built-in validation for required arguments</li>
+</ul>
+<h3 id="contributing"><a class="doc-anchor" href="#contributing">§</a>Contributing</h3>
+<p>Contributions are welcome! Feel free to open an issue or pull request.</p>
+<h3 id="license"><a class="doc-anchor" href="#license">§</a>License</h3>
+<p>This tool is distributed under the [MIT License].</p>
+</div></details><h2 id="modules" class="section-header">Modules<a href="#modules" class="anchor">§</a></h2><dl class="item-table"><dt><a class="mod" href="parser/index.html" title="mod drgrep::args::parser">parser</a></dt><dd>Parser Module</dd></dl></section></div></main></body></html>
