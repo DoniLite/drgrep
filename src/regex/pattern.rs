@@ -1,62 +1,62 @@
-//! # Module SimplePattern
+//! # Module Pattern
 //!
-//! Fournit des fonctionnalités basiques de correspondance de motifs sans dépendances externes.
-//! Cette implémentation supporte un sous-ensemble limité des fonctionnalités d'expressions régulières.
+//! Provides basic pattern matching functionality without external dependencies.
+//! This implementation supports a limited subset of regular expression features.
 //!
-//! Motifs supportés:
-//! - Caractères littéraux (ex: "abc")
-//! - Point (.) pour n'importe quel caractère
-//! - Classes de caractères prédéfinies:
-//!   - \d - Chiffres
-//!   - \w - Caractères alphanumériques + underscore
-//!   - \s - Espaces blancs
-//! - Négation des classes: \D, \W, \S
-//! - Quantificateurs simples:
-//!   - * - Zéro ou plus
-//!   - + - Un ou plus
-//!   - ? - Zéro ou un
-//! - Ancres:
-//!   - ^ - Début de ligne
-//!   - $ - Fin de ligne
-//! - Échappement avec \
+//! Supported patterns:
+//! - Literal characters (e.g., "abc")
+//! - Dot (.) for any character
+//! - Predefined character classes:
+//!   - \d - Digits
+//!   - \w - Alphanumeric characters + underscore
+//!   - \s - Whitespace
+//! - Negation of classes: \D, \W, \S
+//! - Simple quantifiers:
+//!   - * - Zero or more
+//!   - + - One or more
+//!   - ? - Zero or one
+//! - Anchors:
+//!   - ^ - Start of line
+//!   - $ - End of line
+//! - Escaping with \
 
 use std::error::Error;
 use std::fmt;
 
-/// Erreurs spécifiques aux opérations de correspondance de motifs
+/// Errors specific to pattern matching operations
 #[derive(Debug)]
 pub enum PatternError {
-    /// Erreur de syntaxe dans le motif
+    /// Syntax error in the pattern
     InvalidPattern(String),
-    /// Autres erreurs
+    /// Other errors
     Other(String),
 }
 
 impl fmt::Display for PatternError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            PatternError::InvalidPattern(msg) => write!(f, "Motif invalide: {}", msg),
-            PatternError::Other(msg) => write!(f, "Erreur: {}", msg),
+            PatternError::InvalidPattern(msg) => write!(f, "Invalid pattern: {}", msg),
+            PatternError::Other(msg) => write!(f, "Error: {}", msg),
         }
     }
 }
 
 impl Error for PatternError {}
 
-/// Type d'élément de motif
+/// Pattern element type
 #[derive(Debug, Clone, PartialEq)]
 enum PatternElement {
     Literal(char),
     AnyChar,
-    Digit(bool),      // bool indique négation
-    Word(bool),       // bool indique négation
-    Whitespace(bool), // bool indique négation
+    Digit(bool),      // bool indicates negation
+    Word(bool),       // bool indicates negation
+    Whitespace(bool), // bool indicates negation
     StartAnchor,
     EndAnchor,
     Quantifier(Box<PatternElement>, QuantifierType),
 }
 
-/// Types de quantificateurs
+/// Quantifier types
 #[derive(Debug, Clone, PartialEq)]
 enum QuantifierType {
     ZeroOrMore,
@@ -64,14 +64,14 @@ enum QuantifierType {
     ZeroOrOne,
 }
 
-/// Structure principale pour la correspondance de motifs
+/// Main structure for pattern matching
 #[derive(Debug)]
 pub struct SimplePattern {
     elements: Vec<PatternElement>,
     pattern: String,
 }
 
-/// Résultat d'une correspondance
+/// Result of a match
 #[derive(Debug, Clone)]
 pub struct Match {
     pub text: String,
@@ -80,7 +80,7 @@ pub struct Match {
 }
 
 impl SimplePattern {
-    /// Crée un nouveau modèle à partir d'une chaîne de motif
+    /// Creates a new pattern from a pattern string
     pub fn new(pattern: &str) -> Result<Self, PatternError> {
         let mut elements = Vec::new();
         let mut chars = pattern.chars().peekable();
@@ -88,7 +88,7 @@ impl SimplePattern {
         let mut is_start_anchor = false;
         let mut is_end_anchor = false;
 
-        // Vérifier l'ancre de début
+        // Check for start anchor
         if let Some('^') = chars.peek() {
             is_start_anchor = true;
             chars.next();
@@ -97,7 +97,7 @@ impl SimplePattern {
         while let Some(c) = chars.next() {
             match c {
                 '\\' => {
-                    // Caractère d'échappement
+                    // Escape character
                     match chars.next() {
                         Some('d') => elements.push(PatternElement::Digit(false)),
                         Some('D') => elements.push(PatternElement::Digit(true)),
@@ -108,14 +108,14 @@ impl SimplePattern {
                         Some(escaped) => elements.push(PatternElement::Literal(escaped)),
                         None => {
                             return Err(PatternError::InvalidPattern(
-                                "Caractère d'échappement incomplet".to_string(),
+                                "Incomplete escape sequence".to_string(),
                             ))
                         }
                     }
                 }
                 '.' => elements.push(PatternElement::AnyChar),
                 '$' => {
-                    // Si $ est le dernier caractère, c'est une ancre de fin
+                    // If $ is the last character, it's an end anchor
                     if chars.peek().is_none() {
                         is_end_anchor = true;
                     } else {
@@ -123,10 +123,10 @@ impl SimplePattern {
                     }
                 }
                 '*' | '+' | '?' => {
-                    // Quantificateurs
+                    // Quantifiers
                     if elements.is_empty() {
                         return Err(PatternError::InvalidPattern(format!(
-                            "Quantificateur '{}' sans élément précédent",
+                            "Quantifier '{}' without preceding element",
                             c
                         )));
                     }
@@ -164,18 +164,19 @@ impl SimplePattern {
         Ok(result)
     }
 
+    /// Returns the original pattern string
     pub fn get_pattern(&self) -> &str {
         self.pattern.as_str()
     }
 
-    /// Vérifie si le texte correspond au motif
+    /// Checks if the text matches the pattern
     pub fn is_match(&self, text: &str) -> bool {
         self.find(text).is_some()
     }
 
-    /// Trouve la première correspondance dans le texte
+    /// Finds the first match in the text
     pub fn find(&self, text: &str) -> Option<Match> {
-        // Optimisation pour les motifs avec ancre de début
+        // Optimization for patterns with start anchor
         if self.elements.first() == Some(&PatternElement::StartAnchor) {
             return self.find_from(text, 0);
         }
@@ -188,7 +189,7 @@ impl SimplePattern {
         None
     }
 
-    /// Trouve toutes les correspondances dans le texte
+    /// Finds all matches in the text
     pub fn find_all(&self, text: &str) -> Vec<Match> {
         let mut results = Vec::new();
         let mut start_pos = 0;
@@ -205,7 +206,7 @@ impl SimplePattern {
         results
     }
 
-    /// Trouve une correspondance à partir d'une position spécifique
+    /// Finds a match from a specific position
     fn find_from(&self, text: &str, start_pos: usize) -> Option<Match> {
         let text_chars: Vec<char> = text.chars().collect();
         let has_start_anchor = self.elements.first() == Some(&PatternElement::StartAnchor);
@@ -239,7 +240,7 @@ impl SimplePattern {
                 PatternElement::Quantifier(elem, quantifier_type) => {
                     match quantifier_type {
                         QuantifierType::ZeroOrMore => {
-                            // Essayer de faire correspondre autant que possible
+                            // Try to match as much as possible
                             while current_pos < text_chars.len()
                                 && Self::matches_element(elem, text_chars[current_pos])
                             {
@@ -254,7 +255,7 @@ impl SimplePattern {
                                 current_pos += 1;
                             }
                             if current_pos == start_count {
-                                return None; // Besoin d'au moins une correspondance
+                                return None; // Need at least one match
                             }
                         }
                         QuantifierType::ZeroOrOne => {
@@ -278,11 +279,13 @@ impl SimplePattern {
             elem_pos += 1;
         }
 
-        // Vérification de l'ancre de fin APRÈS avoir parcouru les éléments
-        if has_end_anchor
-            && current_pos != text_chars.len()
-            && (current_pos > 0 && text_chars[current_pos - 1] != '\n')
-        {
+        // Check end anchor AFTER processing elements
+        // Check end anchor condition AFTER matching elements
+        if has_end_anchor // If the pattern requires an end anchor
+        && !( // Check if we are NOT at a valid end position
+           current_pos == text_chars.len() // Valid if we reached the end of the text
+           || (current_pos < text_chars.len() && text_chars[current_pos] == '\n') // Valid if the next char is newline
+        ) {
             return None;
         }
 
@@ -305,7 +308,7 @@ impl SimplePattern {
         })
     }
 
-    /// Vérifie si un caractère correspond à un élément de motif
+    /// Checks if a character matches a pattern element
     fn matches_element(element: &PatternElement, c: char) -> bool {
         match element {
             PatternElement::Literal(expected) => c == *expected,
@@ -334,15 +337,15 @@ impl SimplePattern {
                     is_ws
                 }
             }
-            PatternElement::StartAnchor => false, // Ne devrait pas être testé directement
-            PatternElement::EndAnchor => false,   // Ne devrait pas être testé directement
+            PatternElement::StartAnchor => false, // Should not be tested directly
+            PatternElement::EndAnchor => false,   // Should not be tested directly
             PatternElement::Quantifier(_, _) => {
-                panic!("Les quantificateurs ne peuvent pas être testés directement")
+                panic!("Quantifiers cannot be tested directly")
             }
         }
     }
 
-    /// Remplace toutes les occurrences du motif par la chaîne de remplacement
+    /// Replaces all occurrences of the pattern with the replacement string
     pub fn replace_all(&self, text: &str, replacement: &str) -> String {
         let matches = self.find_all(text);
 
@@ -354,19 +357,19 @@ impl SimplePattern {
         let mut last_end = 0;
 
         for m in matches {
-            // Ajouter le texte entre la dernière correspondance et celle-ci
+            // Add text between the last match and this one
             result.push_str(&text[last_end..m.start]);
-            // Ajouter le remplacement
+            // Add replacement
             result.push_str(replacement);
             last_end = m.end;
         }
 
-        // Ajouter le reste du texte
+        // Add the rest of the text
         result.push_str(&text[last_end..]);
         result
     }
 
-    /// Divise le texte selon le motif
+    /// Splits the text according to the pattern
     pub fn split(&self, text: &str) -> Vec<String> {
         let matches = self.find_all(text);
 
@@ -381,18 +384,18 @@ impl SimplePattern {
             if m.start > last_end {
                 result.push(text[last_end..m.start].to_string());
             } else if last_end == 0 {
-                // Si la correspondance est au début, ajouter une chaîne vide
+                // If match is at start, add empty string
                 result.push(String::new());
             }
 
             last_end = m.end;
         }
 
-        // Ajouter le reste du texte
+        // Add the rest of the text
         if last_end < text.len() {
             result.push(text[last_end..].to_string());
         } else {
-            // Si la dernière correspondance est à la fin, ajouter une chaîne vide
+            // If the last match is at the end, add empty string
             result.push(String::new());
         }
 
@@ -400,7 +403,7 @@ impl SimplePattern {
     }
 }
 
-// Fonctions utilitaires
+// Utility functions
 pub fn is_match(pattern: &str, text: &str) -> Result<bool, PatternError> {
     let p = SimplePattern::new(pattern)?;
     Ok(p.is_match(text))
@@ -455,19 +458,19 @@ mod tests {
 
     #[test]
     fn test_quantifiers() {
-        // Zéro ou plus
+        // Zero or more
         let pattern = SimplePattern::new("ab*c").unwrap();
         assert!(pattern.is_match("ac"));
         assert!(pattern.is_match("abc"));
         assert!(pattern.is_match("abbc"));
 
-        // Un ou plus
+        // One or more
         let pattern = SimplePattern::new("ab+c").unwrap();
         assert!(!pattern.is_match("ac"));
         assert!(pattern.is_match("abc"));
         assert!(pattern.is_match("abbc"));
 
-        // Zéro ou un
+        // Zero or one
         let pattern = SimplePattern::new("ab?c").unwrap();
         assert!(pattern.is_match("ac"));
         assert!(pattern.is_match("abc"));
@@ -476,19 +479,19 @@ mod tests {
 
     #[test]
     fn test_anchors() {
-        // Ancre de début
+        // Start anchor
         let pattern = SimplePattern::new("^abc").unwrap();
         assert!(pattern.is_match("abc"));
         assert!(pattern.is_match("abcdef"));
         assert!(!pattern.is_match("xabc"));
 
-        // Ancre de fin
+        // End anchor
         let pattern = SimplePattern::new("abc$").unwrap();
         assert!(pattern.is_match("abc"));
         assert!(pattern.is_match("xabc"));
         assert!(!pattern.is_match("abcx"));
 
-        // Les deux ancres
+        // Both anchors
         let pattern = SimplePattern::new("^abc$").unwrap();
         assert!(pattern.is_match("abc"));
         assert!(!pattern.is_match("abcx"));
@@ -526,45 +529,4 @@ mod tests {
         let result = pattern.split("abc123def456ghi");
         assert_eq!(result, vec!["abc", "def", "ghi"]);
     }
-}
-
-// Exemple d'utilisation
-#[allow(dead_code)]
-fn example() -> Result<(), Box<dyn Error>> {
-    let pattern = SimplePattern::new("\\d+")?;
-
-    // Vérification de correspondance
-    let contains_digits = pattern.is_match("abc123");
-    println!("Contient des chiffres: {}", contains_digits);
-
-    // Recherche de la première correspondance
-    if let Some(m) = pattern.find("Version 2.3.4") {
-        println!("Premier nombre trouvé: {}", m.text);
-    }
-
-    // Recherche de toutes les correspondances
-    let matches = pattern.find_all("Version 2.3.4");
-    println!(
-        "Tous les nombres: {:?}",
-        matches.iter().map(|m| &m.text).collect::<Vec<_>>()
-    );
-
-    // Remplacement
-    let result = pattern.replace_all("Version 2.3.4", "X");
-    println!("Après remplacement: {}", result);
-
-    // Division
-    let parts = pattern.split("abc123def456");
-    println!("Parties: {:?}", parts);
-
-    // Utilisation des fonctions utilitaires
-    let email_pattern = "\\w+@\\w+\\.\\w+";
-    let text = "Contact: user@example.com et admin@domain.org";
-    let emails = find_all(email_pattern, text)?;
-    println!(
-        "Emails trouvés: {:?}",
-        emails.iter().map(|m| &m.text).collect::<Vec<_>>()
-    );
-
-    Ok(())
 }
