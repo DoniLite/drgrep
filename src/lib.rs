@@ -84,7 +84,13 @@ drgrep [args]
 
 impl<'a> Config<'a> {
     pub fn new(args: &'a args::parser::ArgParser) -> Result<Self, &'static str> {
-        if !args.has("key") && !args.has("k") && !args.has("regex") && !args.has("r") {
+        if !args.has("key")
+            && !args.has("k")
+            && !args.has("regex")
+            && !args.has("r")
+            && !args.has("content")
+            && !args.has("c")
+        {
             return Err("no search key/regex provided");
         }
         let search_key = match args.get("key") {
@@ -105,6 +111,7 @@ impl<'a> Config<'a> {
                     is_dir = true;
                     Some(value.as_str())
                 } else {
+                    is_dir = true;
                     None
                 }
             }
@@ -118,9 +125,11 @@ impl<'a> Config<'a> {
                         is_dir = true;
                         p
                     } else {
+                        is_dir = true;
                         None
                     }
                 } else {
+                    is_dir = true;
                     None
                 }
             }
@@ -174,6 +183,7 @@ impl<'a> Config<'a> {
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let ignore_content = fs::read_to_string(".gitignore")?;
     let ignore = utilities::GitIgnoreFiles::load(&ignore_content);
+    // println!("{:?}", ignore);
     if !config.path_is_dir {
         if let Some(val) = config.file_path {
             let file_path = path::Path::new(val);
@@ -229,6 +239,41 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                 }
             }
             return Ok(());
+        } else if let Some(content) = config.search_content {
+            if let Some(key) = config.search_key {
+                if config.sensitive {
+                    for result in search_word_sensitive_case(key, "", content) {
+                        print_colored!(
+                            format!("line: {}", result.idx).as_str(),
+                            color::config::Color::RED
+                        );
+                        println!();
+                        print_partial_colored!(&result.line);
+                        println!("===========================");
+                    }
+                } else {
+                    for result in search_word_insensitive_case(key, "", content) {
+                        print_colored!(
+                            format!("line: {}", result.idx).as_str(),
+                            color::config::Color::RED
+                        );
+                        println!();
+                        print_partial_colored!(&result.line);
+                        println!("===========================");
+                    }
+                }
+            } else if let Some(reg) = config.regex {
+                for result in search_with_regex(&reg, "", content) {
+                    println!();
+                    print_colored!(
+                        format!("line: {}", result.idx).as_str(),
+                        color::config::Color::RED
+                    );
+                    println!();
+                    print_partial_colored!(&result.line);
+                    println!("===========================");
+                }
+            }
         }
         return Ok(());
     }
@@ -241,14 +286,11 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     }
     files
         .filter(|f| {
-            if ignore.exist {
-                if let Ok(entry) = f {
-                    !ignore.is_ignored(&entry.path())
-                } else {
-                    false
-                }
+            if let Ok(entry) = f {
+                // println!("entry: {}", entry.path().display());
+                !ignore.is_ignored(&entry.path())
             } else {
-                true
+                false
             }
         })
         .for_each(|el| {
@@ -443,34 +485,50 @@ mod utilities {
 
     use crate::Path;
     use std::{
+        env,
         error::Error,
         fs::{self, DirEntry},
         io::{self, Read},
+        path::PathBuf,
     };
 
     #[derive(Debug)]
     pub struct GitIgnoreFiles<'a> {
-        pub exist: bool,
         pub entry: Vec<&'a str>,
     }
 
     impl<'a> GitIgnoreFiles<'a> {
         pub fn load(content: &'a str) -> Self {
             let els: Vec<&'a str> = content
-                .split('\n')
-                .map(Path::new)
-                .filter(|p| p.exists())
-                .map(|s| s.to_str().unwrap())
+                .lines()
+                .filter_map(|mut line| {
+                    line = line.trim();
+                    let base_path = match env::current_dir() {
+                        Ok(d) => d,
+                        Err(_) => PathBuf::new(),
+                    };
+                    // println!("Current directory: {}", base_path.display());
+
+                    let path = if line.starts_with('/') {
+                        base_path.join(line.replacen("/", "./", 1))
+                    } else {
+                        base_path.join(line)
+                    };
+                    // println!("Current path: {}", path.display());
+                    if !line.is_empty() && !line.starts_with('#') && path.exists() {
+                        Some(line) // On garde l’entrée originale
+                    } else {
+                        None
+                    }
+                })
                 .collect();
-            Self {
-                exist: true,
-                entry: els,
-            }
+
+            Self { entry: els }
         }
 
         pub fn is_ignored(&self, p: &Path) -> bool {
             if let Some(pth) = p.to_str() {
-                self.entry.contains(&pth)
+                self.entry.iter().any(|entry| pth.ends_with(entry))
             } else {
                 false
             }
