@@ -9,7 +9,7 @@ homepage = "https://donilite.github.io/drgrep/"
 repository = "https://github.com/DoniLite/drgrep"
 keywords = ["CLI", "grep", "crate"]
 categories = ["command-line-utilities", "command-line-interface"]
-include = ["src/**/*", "Cargo.toml", "LICENSE"]
+include = ["src/**/*", "tests/**/*", "Cargo.toml", "LICENSE"]
 
 # Définition du binaire (exécutable)
 [[bin]]

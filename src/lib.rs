@@ -34,11 +34,9 @@ pub mod args;
 pub mod color;
 pub mod regex;
 
-use std::cell::RefCell;
 use std::env;
 use std::fs::ReadDir;
 use std::path::Path;
-use std::rc::Rc;
 use std::{error::Error, fs, path};
 
 pub use args::parser::ArgParser;
@@ -86,21 +84,23 @@ drgrep [args]
 
 impl<'a> Config<'a> {
     pub fn new(args: &'a args::parser::ArgParser) -> Result<Self, &'static str> {
-        if !args.has("key") && !args.has("k") && !args.has("regex") && !args.has("r") {
+        if !args.has("key")
+            && !args.has("k")
+            && !args.has("regex")
+            && !args.has("r")
+            && !args.has("content")
+            && !args.has("c")
+        {
             return Err("no search key/regex provided");
         }
         let search_key = match args.get("key") {
             Some(value) => Some(value.as_str()),
-            None => match args.get("k") {
-                Some(v) => Some(v.as_str()),
-                None => None,
-            },
+            None => args.get("k").as_ref().map(|v| v.as_str()),
         };
-        let split_search_key: Vec<&str>;
-        match search_key {
-            Some(k) => split_search_key = k.split(',').collect(),
-            None => split_search_key = vec![],
-        }
+        let split_search_key: Vec<&str> = match search_key {
+            Some(k) => k.split(',').collect(),
+            None => vec![],
+        };
         let mut is_dir = false;
         let file_path = match args.get("path") {
             Some(value) => {
@@ -111,6 +111,7 @@ impl<'a> Config<'a> {
                     is_dir = true;
                     Some(value.as_str())
                 } else {
+                    is_dir = true;
                     None
                 }
             }
@@ -124,9 +125,11 @@ impl<'a> Config<'a> {
                         is_dir = true;
                         p
                     } else {
+                        is_dir = true;
                         None
                     }
                 } else {
+                    is_dir = true;
                     None
                 }
             }
@@ -137,13 +140,13 @@ impl<'a> Config<'a> {
             None
         };
         let regex = match args.get("regex") {
-            Some(value) => match regex::pattern::SimplePattern::new(&value) {
+            Some(value) => match regex::pattern::SimplePattern::new(value) {
                 Ok(val) => Some(val),
                 Err(_) => return Err("Error during the creating of the current regex"),
             },
             None => {
                 if let Some(value) = args.get("r") {
-                    if let Ok(r) = regex::pattern::SimplePattern::new(&value) {
+                    if let Ok(r) = regex::pattern::SimplePattern::new(value) {
                         Some(r)
                     } else {
                         return Err("Error during the creating of the current regex");
@@ -178,6 +181,9 @@ impl<'a> Config<'a> {
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    let ignore_content = fs::read_to_string(".gitignore")?;
+    let ignore = utilities::GitIgnoreFiles::load(&ignore_content);
+    // println!("{:?}", ignore);
     if !config.path_is_dir {
         if let Some(val) = config.file_path {
             let file_path = path::Path::new(val);
@@ -198,8 +204,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                     println!("===========================");
                 }
                 return Ok(());
-            }
-            if config.sensitive {
+            } else if config.sensitive {
                 if let Some(key) = config.search_key {
                     for result in search_word_sensitive_case(key, val, &content) {
                         print_colored!(
@@ -216,14 +221,38 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                         println!("===========================");
                     }
                 }
-            } else {
-                if let Some(key) = config.search_key {
-                    for result in search_word_insensitive_case(key, val, &content) {
+                return Ok(());
+            } else if let Some(key) = config.search_key {
+                for result in search_word_insensitive_case(key, val, &content) {
+                    print_colored!(
+                        format!("source: {}", result.source).as_str(),
+                        color::config::Color::BRIGHT_BLUE
+                    );
+                    println!();
+                    print_colored!(
+                        format!("line: {}", result.idx).as_str(),
+                        color::config::Color::RED
+                    );
+                    println!();
+                    print_partial_colored!(&result.line);
+                    println!("===========================");
+                }
+            }
+            return Ok(());
+        } else if let Some(content) = config.search_content {
+            if let Some(key) = config.search_key {
+                if config.sensitive {
+                    for result in search_word_sensitive_case(key, "", content) {
                         print_colored!(
-                            format!("source: {}", result.source).as_str(),
-                            color::config::Color::BRIGHT_BLUE
+                            format!("line: {}", result.idx).as_str(),
+                            color::config::Color::RED
                         );
                         println!();
+                        print_partial_colored!(&result.line);
+                        println!("===========================");
+                    }
+                } else {
+                    for result in search_word_insensitive_case(key, "", content) {
                         print_colored!(
                             format!("line: {}", result.idx).as_str(),
                             color::config::Color::RED
@@ -233,9 +262,20 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                         println!("===========================");
                     }
                 }
+            } else if let Some(reg) = config.regex {
+                for result in search_with_regex(&reg, "", content) {
+                    println!();
+                    print_colored!(
+                        format!("line: {}", result.idx).as_str(),
+                        color::config::Color::RED
+                    );
+                    println!();
+                    print_partial_colored!(&result.line);
+                    println!("===========================");
+                }
             }
-            return Ok(());
         }
+        return Ok(());
     }
 
     let files: ReadDir;
@@ -244,38 +284,25 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     } else {
         files = fs::read_dir(Path::new("./"))?;
     }
-    files.for_each(|el| {
-        if let Ok(f) = el {
-            utilities::visit_dirs(&f.path(), &|f| {
-                if let Ok(f_type) = f.file_type() {
-                    if f_type.is_file() {
-                        if let Ok(content) = utilities::can_read_to_utf8(&f.path()) {
-                            if let Some(reg) = &config.regex {
-                                for result in
-                                    search_with_regex(&reg, f.path().to_str().unwrap(), &content)
-                                {
-                                    print_colored!(
-                                        format!("source: {}", result.source).as_str(),
-                                        color::config::Color::BRIGHT_BLUE
-                                    );
-                                    println!();
-                                    print_colored!(
-                                        format!("line: {}", result.idx).as_str(),
-                                        color::config::Color::RED
-                                    );
-                                    println!();
-                                    print_partial_colored!(&result.line);
-                                    println!("===========================");
-                                }
-                                return;
-                            }
-                            if config.sensitive {
-                                if let Some(key) = config.search_key {
-                                    for result in search_word_sensitive_case(
-                                        key,
-                                        f.path().to_str().unwrap(),
-                                        &content,
-                                    ) {
+    files
+        .filter(|f| {
+            if let Ok(entry) = f {
+                // println!("entry: {}", entry.path().display());
+                !ignore.is_ignored(&entry.path())
+            } else {
+                false
+            }
+        })
+        .for_each(|el| {
+            if let Ok(f) = el {
+                utilities::visit_dirs(&f.path(), &|f| {
+                    if let Ok(f_type) = f.file_type() {
+                        if f_type.is_file() {
+                            if let Ok(content) = utilities::can_read_to_utf8(&f.path()) {
+                                if let Some(reg) = &config.regex {
+                                    for result in
+                                        search_with_regex(reg, f.path().to_str().unwrap(), &content)
+                                    {
                                         print_colored!(
                                             format!("source: {}", result.source).as_str(),
                                             color::config::Color::BRIGHT_BLUE
@@ -289,9 +316,30 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                                         print_partial_colored!(&result.line);
                                         println!("===========================");
                                     }
+                                    return;
                                 }
-                            } else {
-                                if let Some(key) = config.search_key {
+                                if config.sensitive {
+                                    if let Some(key) = config.search_key {
+                                        for result in search_word_sensitive_case(
+                                            key,
+                                            f.path().to_str().unwrap(),
+                                            &content,
+                                        ) {
+                                            print_colored!(
+                                                format!("source: {}", result.source).as_str(),
+                                                color::config::Color::BRIGHT_BLUE
+                                            );
+                                            println!();
+                                            print_colored!(
+                                                format!("line: {}", result.idx).as_str(),
+                                                color::config::Color::RED
+                                            );
+                                            println!();
+                                            print_partial_colored!(&result.line);
+                                            println!("===========================");
+                                        }
+                                    }
+                                } else if let Some(key) = config.search_key {
                                     for result in search_word_insensitive_case(
                                         key,
                                         f.path().to_str().unwrap(),
@@ -314,11 +362,10 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                             }
                         }
                     }
-                }
-            })
-            .unwrap_or_else(|err| panic!("{}", err))
-        }
-    });
+                })
+                .unwrap_or_else(|err| panic!("{}", err))
+            }
+        });
     Ok(())
 }
 
@@ -344,34 +391,28 @@ pub fn search_word_sensitive_case<'a, 'b>(
     source: &'b str,
     content: &'a str,
 ) -> Vec<SearchResult<'a, 'b>> {
-    let shared_key = Rc::new(key);
-    // Used to count the number of the content lines
-    // This value is incremented
-    let occ = Rc::new(RefCell::new(0));
     content
         .lines()
-        .filter(|l| {
-            *Rc::clone(&occ).borrow_mut() += 1;
-            l.contains(*Rc::clone(&shared_key))
-        })
-        .map(|line| {
-            let key = Rc::clone(&shared_key);
+        .enumerate() // Provides a line index automatically
+        .filter(|(_, line)| line.contains(key))
+        .map(|(idx, line)| {
+            // For example, split the line and highlight matching words
             let parts = line
                 .split(' ')
                 .map(|w| {
-                    let pattern = regex::pattern::SimplePattern::new(&key).unwrap();
-                    if pattern.is_match(w) {
-                        (w, color::config::Color::BRIGHT_YELLOW)
+                    let color = if w.contains(key) {
+                        color::config::Color::BRIGHT_YELLOW
                     } else {
-                        (w, color::config::Color::WHITE)
-                    }
+                        color::config::Color::WHITE
+                    };
+                    (w, color)
                 })
                 .collect();
             SearchResult {
                 line: parts,
-                word: &key,
+                word: key,
                 source,
-                idx: *Rc::clone(&occ).borrow(),
+                idx: idx + 1, // Using one-based line numbers
             }
         })
         .collect()
@@ -382,36 +423,28 @@ pub fn search_word_insensitive_case<'a, 'b>(
     source: &'b str,
     content: &'a str,
 ) -> Vec<SearchResult<'a, 'b>> {
-    let shared_key = Rc::new(key);
-    // Used to count the number of the content lines
-    // This value is incremented
-    let occ = Rc::new(RefCell::new(0));
     content
         .lines()
-        .filter(|l| {
-            *Rc::clone(&occ).borrow_mut() += 1;
-            l.to_lowercase()
-                .contains(&Rc::clone(&shared_key).to_lowercase())
-        })
-        .map(|line| {
-            let key = Rc::clone(&shared_key);
+        .enumerate() // Provides a line index automatically
+        .filter(|(_, line)| line.to_lowercase().contains(&key.to_lowercase()))
+        .map(|(idx, line)| {
+            // For example, split the line and highlight matching words
             let parts = line
                 .split(' ')
                 .map(|w| {
-                    let pattern =
-                        regex::pattern::SimplePattern::new(key.to_lowercase().as_str()).unwrap();
-                    if pattern.is_match(w.to_lowercase().as_str()) {
-                        (w, color::config::Color::BRIGHT_YELLOW)
+                    let color = if w.to_lowercase().contains(&key.to_lowercase()) {
+                        color::config::Color::BRIGHT_YELLOW
                     } else {
-                        (w, color::config::Color::WHITE)
-                    }
+                        color::config::Color::WHITE
+                    };
+                    (w, color)
                 })
                 .collect();
             SearchResult {
                 line: parts,
-                word: &key,
+                word: key,
                 source,
-                idx: *Rc::clone(&occ).borrow(),
+                idx: idx + 1, // Using one-based line numbers
             }
         })
         .collect()
@@ -422,32 +455,27 @@ pub fn search_with_regex<'a, 'b>(
     source: &'b str,
     content: &'a str,
 ) -> Vec<SearchResult<'a, 'b>> {
-    let occ = Rc::new(RefCell::new(0));
-    let shared_regex = Rc::new(regex);
     content
         .lines()
-        .filter(|l| {
-            *Rc::clone(&occ).borrow_mut() += 1;
-            let r = Rc::clone(&shared_regex);
-            r.is_match(l)
-        })
-        .map(|line| {
-            let r = Rc::clone(&shared_regex);
+        .enumerate()
+        .filter(|(_, l)| regex.is_match(l))
+        .map(|(idx, line)| {
             let parts = line
                 .split(' ')
                 .map(|w| {
-                    if r.is_match(w.to_lowercase().as_str()) {
-                        (w, color::config::Color::BRIGHT_YELLOW)
+                    let color = if regex.is_match(w.to_lowercase().as_str()) {
+                        color::config::Color::BRIGHT_YELLOW
                     } else {
-                        (w, color::config::Color::WHITE)
-                    }
+                        color::config::Color::WHITE
+                    };
+                    (w, color)
                 })
                 .collect();
             SearchResult {
                 line: parts,
                 word: "",
                 source,
-                idx: *Rc::clone(&occ).borrow(),
+                idx: idx + 1,
             }
         })
         .collect()
@@ -457,10 +485,55 @@ mod utilities {
 
     use crate::Path;
     use std::{
+        env,
         error::Error,
         fs::{self, DirEntry},
         io::{self, Read},
+        path::PathBuf,
     };
+
+    #[derive(Debug)]
+    pub struct GitIgnoreFiles<'a> {
+        pub entry: Vec<&'a str>,
+    }
+
+    impl<'a> GitIgnoreFiles<'a> {
+        pub fn load(content: &'a str) -> Self {
+            let els: Vec<&'a str> = content
+                .lines()
+                .filter_map(|mut line| {
+                    line = line.trim();
+                    let base_path = match env::current_dir() {
+                        Ok(d) => d,
+                        Err(_) => PathBuf::new(),
+                    };
+                    // println!("Current directory: {}", base_path.display());
+
+                    let path = if line.starts_with('/') {
+                        base_path.join(line.replacen("/", "./", 1))
+                    } else {
+                        base_path.join(line)
+                    };
+                    // println!("Current path: {}", path.display());
+                    if !line.is_empty() && !line.starts_with('#') && path.exists() {
+                        Some(line) // On garde l’entrée originale
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+
+            Self { entry: els }
+        }
+
+        pub fn is_ignored(&self, p: &Path) -> bool {
+            if let Some(pth) = p.to_str() {
+                self.entry.iter().any(|entry| pth.ends_with(entry))
+            } else {
+                false
+            }
+        }
+    }
 
     pub fn can_read_to_utf8(path: &Path) -> Result<String, Box<dyn Error>> {
         let mut file = fs::File::open(path)?;
