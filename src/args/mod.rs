@@ -23,7 +23,7 @@
 //! ```rust
 //! use drgrep::ArgParser;
 //!
-//! fn main() {
+//! fn your_fn() {
 //!    // Initialize the parser (automatically parses command-line arguments)
 //!    let args = ArgParser::new();
 //!
