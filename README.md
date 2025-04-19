@@ -1,7 +1,7 @@
 # drgrep ✨
 
-[![Build Status](https://github.com/DoniLite/drgrep/actions/workflows/build_and_release.yml/badge.svg)](https://github.com/DoniLite/drgrep/actions/workflows/build_release.yml/badge.svg)
-[![Tests Status](https://github.com/DoniLite/drgrep/actions/workflows/build_and_release.yml/badge.svg)](https://github.com/DoniLite/drgrep/actions/workflows/rust_test.yml/badge.svg)
+[![Build Status](https://github.com/DoniLite/drgrep/actions/workflows/build_release.yml/badge.svg)](https://github.com/DoniLite/drgrep/actions/workflows/build_release.yml)
+[![Tests Status](https://github.com/DoniLite/drgrep/actions/workflows/rust_test.yml/badge.svg)](https://github.com/DoniLite/drgrep/actions/workflows/rust_test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Crates.io](https://img.shields.io/crates/v/drgrep.svg)](https://crates.io/crates/drgrep)
 
