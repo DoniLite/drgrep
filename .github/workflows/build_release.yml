@@ -99,14 +99,21 @@ jobs:
         with:
           name: drgrep-macos
           path: artifacts
+      
+      - name: Download release notes
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: .
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             artifacts/drgrep-linux
             artifacts/drgrep-windows.exe
             artifacts/drgrep-macos
+          body_path: release-notes.md
           draft: false
           prerelease: false
         env:

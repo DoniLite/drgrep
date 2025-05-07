@@ -1,0 +1,22 @@
+{
+    "name": "drgrep",
+    "version": "0.0.0",
+    "scripts": {
+        "semantic-release": "semantic-release"
+    },
+    "devDependencies": {
+        "semantic-release": "^22.0.0",
+        "@semantic-release/changelog": "^6.0.0",
+        "@semantic-release/git": "^10.0.1"
+    },
+    "release": {
+        "branches": [
+            "master",
+            "release/*"
+        ],
+        "plugins": [
+            "@semantic-release/commit-analyzer",
+            "@semantic-release/release-notes-generator"
+        ]
+    }
+}

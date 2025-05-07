@@ -1,0 +1,44 @@
+name: Generate Release Notes
+
+on:
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - master
+      - release/*
+
+jobs:
+  release-notes:
+    runs-on: ubuntu-latest
+    outputs:
+      notes_path: release-notes.md
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install semantic-release @semantic-release/changelog @semantic-release/git
+
+      - name: Generate release notes only
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npx semantic-release --dry-run > dry-run.log
+
+          # Extract release notes from dry run
+          awk '/^---$/,/^---$/' dry-run.log | sed '1d;$d' > release-notes.md
+          
+          echo "Release notes generated:"
+          cat release-notes.md
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes.md
