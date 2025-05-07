@@ -33,6 +33,8 @@
 pub mod args;
 pub mod color;
 pub mod regex;
+pub mod glob;
+pub mod temp_dir;
 
 use std::env;
 use std::fs::ReadDir;
