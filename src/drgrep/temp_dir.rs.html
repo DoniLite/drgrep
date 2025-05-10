@@ -3,8 +3,8 @@
 <a href=#3 id=3 data-nosnippet>3</a><span class="kw">pub fn </span>create_temp_dir() -&gt; std::io::Result&lt;TempDir&gt; {
 <a href=#4 id=4 data-nosnippet>4</a>    <span class="kw">let </span>timestamp = SystemTime::now()
 <a href=#5 id=5 data-nosnippet>5</a>        .duration_since(UNIX_EPOCH)
-<a href=#6 id=6 data-nosnippet>6</a>        .unwrap()
-<a href=#7 id=7 data-nosnippet>7</a>        .as_nanos();
+<a href=#6 id=6 data-nosnippet>6</a>        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))<span class="question-mark">?
+<a href=#7 id=7 data-nosnippet>7</a>        </span>.as_nanos();
 <a href=#8 id=8 data-nosnippet>8</a>    <span class="kw">let </span>temp_path = env::temp_dir().join(<span class="macro">format!</span>(<span class="string">"glob-test-{}"</span>, timestamp));
 <a href=#9 id=9 data-nosnippet>9</a>    fs::create_dir_all(<span class="kw-2">&amp;</span>temp_path)<span class="question-mark">?</span>;
 <a href=#10 id=10 data-nosnippet>10</a>    <span class="prelude-val">Ok</span>(TempDir { path: temp_path })
