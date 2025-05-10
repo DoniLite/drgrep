@@ -3,7 +3,7 @@ use std::{env, fs, path::PathBuf, time::{SystemTime, UNIX_EPOCH}};
 pub fn create_temp_dir() -> std::io::Result<TempDir> {
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .unwrap()
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?
         .as_nanos();
     let temp_path = env::temp_dir().join(format!("glob-test-{}", timestamp));
     fs::create_dir_all(&temp_path)?;
