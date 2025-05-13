@@ -12,6 +12,10 @@ on:
       - master
       - release/*
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   release-notes:
     runs-on: ubuntu-latest
@@ -34,6 +38,8 @@ jobs:
         with:
           release-type: rust
           token: ${{ secrets.GITHUB_TOKEN }}
+          skip-github-pull-request: true
+          skip-github-release: true
 
       - name: Get release version
         id: get_version
