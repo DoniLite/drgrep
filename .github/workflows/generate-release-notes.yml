@@ -64,6 +64,8 @@ jobs:
             VERSION="${BRANCH#release/}"
           elif [[ "$BRANCH" == "develop" ]]; then
             VERSION="develop"
+          elif [[ "$BRANCH" == "merge" ]]; then
+            VERSION="merge"
           else
             VERSION="unknown"
           fi
