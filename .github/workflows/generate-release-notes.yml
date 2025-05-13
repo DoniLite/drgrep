@@ -15,34 +15,66 @@ on:
 jobs:
   release-notes:
     runs-on: ubuntu-latest
-    outputs:
-      notes_path: release-notes.md
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/checkout@v4
         with:
-          node-version: 18
+          fetch-depth: 0 # Important pour obtenir l'historique complet des commits
 
-      - name: Install dependencies
-        run: npm install semantic-release @semantic-release/changelog @semantic-release/git
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
 
-      - name: Generate release notes only
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install cargo-semver-checks
+        run: cargo install cargo-semver-checks --locked
+
+      - name: Run release-please
+        uses: google-github-actions/release-please-action@v4
+        with:
+          release-type: rust
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get release version
+        id: get_version
         run: |
-          npx semantic-release --dry-run > dry-run.log
+          # Extraire la version de la branche (par exemple, "release/1.2.3" -> "1.2.3")
+          BRANCH="${GITHUB_REF##*/}"
+          if [[ "$BRANCH" == "master" ]]; then
+            VERSION="master"
+          elif [[ "$BRANCH" == "release/"* ]]; then
+            VERSION="${BRANCH#release/}"
+          else
+            VERSION="unknown"
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "RELEASE_TAG=v$VERSION" >> $GITHUB_ENV # Define RELEASE_TAG
 
-          # Extract release notes from dry run
-          awk '/^---$/,/^---$/' dry-run.log | sed '1d;$d' > release-notes.md
+      - name: Upload release notes artifact
+        if: env.VERSION != 'unknown' # only upload if version is known
+        run: |
+          echo "Release notes artifact for version $VERSION"
+          mkdir -p release_notes
           
-          echo "Release notes generated:"
-          cat release-notes.md
-
-      - name: Upload release notes
+          # Générer les notes de version avec release-please et les capturer
+          RELEASE_NOTES=$(npx release-please --release-type rust --package-name . --dry-run | awk '/^---$/,/^---$/' | sed '1d;$d')
+          echo "$RELEASE_NOTES" > release_notes/release_notes.md
+          
+          # Si la sortie de release-please est vide, créer un contenu par défaut
+          if [ -z "$RELEASE_NOTES" ]; then
+            echo "# Release Notes for $VERSION" > release_notes/release_notes.md
+            echo "No significant changes for this release." >> release_notes/release_notes.md
+          fi
+          
+          # Créer un fichier contenant la version
+          echo "$VERSION" > release_notes/version.txt
+          
+          tar -czvf release_notes.tar.gz release_notes
+          echo "RELEASE_NOTES_PATH=$GITHUB_WORKSPACE/release_notes.tar.gz" >> $GITHUB_ENV # Define RELEASE_NOTES_PATH
+        
+        # Utilisez upload-artifact pour rendre l'archive disponible pour d'autres jobs/workflows
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: release-notes
-          path: release-notes.md
+          name: release-notes-${{ env.VERSION }}
+          path: ${{ env.RELEASE_NOTES_PATH }}
