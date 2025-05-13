@@ -7,6 +7,10 @@ on:
     branches:
       - master
       - release/*
+  pull_request:
+    branches:
+      - master
+      - release/*
 
 jobs:
   release-notes:
