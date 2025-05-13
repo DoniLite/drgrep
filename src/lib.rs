@@ -32,13 +32,13 @@
 
 pub mod args;
 pub mod color;
-pub mod regex;
 pub mod glob;
+pub mod regex;
 pub mod temp_dir;
 
 use std::env;
 use std::fs::ReadDir;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::{error::Error, fs, path};
 
 pub use args::parser::ArgParser;
@@ -183,9 +183,12 @@ impl<'a> Config<'a> {
 }
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    let ignore_content = fs::read_to_string(".gitignore")?;
-    let ignore = utilities::GitIgnoreFiles::load(&ignore_content);
-    // println!("{:?}", ignore);
+    let ignore = utilities::GitIgnoreFiles::load();
+    let current_dir = if let Ok(p) = env::current_dir() {
+        p
+    } else {
+        PathBuf::new()
+    };
     if !config.path_is_dir {
         if let Some(val) = config.file_path {
             let file_path = path::Path::new(val);
@@ -290,7 +293,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         .filter(|f| {
             if let Ok(entry) = f {
                 // println!("entry: {}", entry.path().display());
-                !ignore.is_ignored(&entry.path())
+                !ignore.is_ignored(&entry.path(), &current_dir)
             } else {
                 false
             }
@@ -299,7 +302,7 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
             if let Ok(f) = el {
                 utilities::visit_dirs(&f.path(), &|f| {
                     if let Ok(f_type) = f.file_type() {
-                        if f_type.is_file() {
+                        if f_type.is_file() && !ignore.is_ignored(&f.path(), &current_dir) {
                             if let Ok(content) = utilities::can_read_to_utf8(&f.path()) {
                                 if let Some(reg) = &config.regex {
                                     for result in
@@ -485,52 +488,62 @@ pub fn search_with_regex<'a, 'b>(
 
 mod utilities {
 
-    use crate::Path;
+    use crate::{glob::GlobPattern, Path};
     use std::{
         env,
         error::Error,
         fs::{self, DirEntry},
         io::{self, Read},
         path::PathBuf,
+        rc::Rc,
     };
 
     #[derive(Debug)]
-    pub struct GitIgnoreFiles<'a> {
-        pub entry: Vec<&'a str>,
+    pub struct GitIgnoreFiles {
+        pub pattern: Vec<Rc<GlobPattern>>,
+        pub entries: Vec<Rc<String>>,
     }
 
-    impl<'a> GitIgnoreFiles<'a> {
-        pub fn load(content: &'a str) -> Self {
-            let els: Vec<&'a str> = content
-                .lines()
-                .filter_map(|mut line| {
-                    line = line.trim();
-                    let base_path = match env::current_dir() {
-                        Ok(d) => d,
-                        Err(_) => PathBuf::new(),
-                    };
-                    // println!("Current directory: {}", base_path.display());
-
-                    let path = if line.starts_with('/') {
-                        base_path.join(line.replacen("/", "./", 1))
-                    } else {
-                        base_path.join(line)
-                    };
-                    // println!("Current path: {}", path.display());
-                    if !line.is_empty() && !line.starts_with('#') && path.exists() {
-                        Some(line) // On garde l’entrée originale
-                    } else {
-                        None
-                    }
-                })
-                .collect();
-
-            Self { entry: els }
+    impl GitIgnoreFiles {
+        pub fn load() -> Self {
+            let mut patterns = Vec::new();
+            let mut entries = Vec::new();
+            let cur_dir = if let Ok(p) = env::current_dir() {
+                p
+            } else {
+                PathBuf::new()
+            };
+            if let Ok(content) = fs::read_to_string(Path::new(".gitignore")) {
+                // println!("gitignore content: \n {}", content);
+                content.lines().for_each(|l| {
+                    patterns.push(Rc::new(GlobPattern::new(&format!(
+                        "{}/{}",
+                        cur_dir.display(),
+                        l
+                    ))));
+                    entries.push(Rc::new(l.to_string()));
+                });
+            }
+            patterns.push(Rc::new(GlobPattern::new(&format!(
+                "{}/.git/**",
+                cur_dir.display()
+            ))));
+            // println!(
+            //     "format constructor for git: {}",
+            //     &format!("{}/.git/**", cur_dir.display())
+            // );
+            Self {
+                pattern: patterns,
+                entries,
+            }
         }
 
-        pub fn is_ignored(&self, p: &Path) -> bool {
+        pub fn is_ignored(&self, p: &Path, current: &Path) -> bool {
             if let Some(pth) = p.to_str() {
-                self.entry.iter().any(|entry| pth.ends_with(entry))
+                let gen_path = format!("{}{}", current.display(), &pth[1..]);
+                // println!("Generated path in the current {}", gen_path);
+                self.pattern.iter().any(|pat| pat.matches(&gen_path))
+                    || self.entries.iter().any(|e| pth.contains(e.as_str()))
             } else {
                 false
             }
@@ -558,6 +571,21 @@ mod utilities {
         }
         Ok(())
     }
+
+    // fn visit_dirs_recursive(dir: &Path, outputs: Rc<RefCell<Vec<String>>>) -> io::Result<()> {
+    //     if dir.is_dir() {
+    //         for entry in fs::read_dir(dir)? {
+    //             let entry = entry?;
+    //             let path = entry.path();
+    //             if path.is_dir() {
+    //                 visit_dirs_recursive(&path, Rc::clone(&outputs))?;
+    //             } else if let Some(s) = path.to_str() {
+    //                 outputs.borrow_mut().push(s.to_string());
+    //             }
+    //         }
+    //     }
+    //     Ok(())
+    // }
 }
 
 #[cfg(test)]

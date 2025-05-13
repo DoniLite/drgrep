@@ -135,8 +135,8 @@ fn test_utility_functions() {
     assert!(!pattern::is_match("cat", text).unwrap());
 
     // find
-  // NOTE: {n} quantifier is not supported. Using repeated \w instead.
-   let result = pattern::find("\\w\\w\\w\\w\\w", text).unwrap();
+    // NOTE: {n} quantifier is not supported. Using repeated \w instead.
+    let result = pattern::find("\\w\\w\\w\\w\\w", text).unwrap();
     assert!(result.is_some());
     assert_eq!(result.unwrap().text, "quick");
 
@@ -146,16 +146,18 @@ fn test_utility_functions() {
 
     // Case sensitivity test adjusted
     assert!(pattern::is_match("The", text).unwrap()); // Matches "The"
-   let find_lower_the_in_upper = pattern::is_match("the", "The").unwrap();
-  assert!(!find_lower_the_in_upper, "Should not find lowercase 'the' in 'The'");
+    let find_lower_the_in_upper = pattern::is_match("the", "The").unwrap();
+    assert!(
+        !find_lower_the_in_upper,
+        "Should not find lowercase 'the' in 'The'"
+    );
 
-   // Let's also check find_all for case sensitivity
-   let results_the_lower = pattern::find_all("the", text).unwrap();
-   assert_eq!(results_the_lower.len(), 1);
-   assert_eq!(results_the_lower[0].text, "the");
+    // Let's also check find_all for case sensitivity
+    let results_the_lower = pattern::find_all("the", text).unwrap();
+    assert_eq!(results_the_lower.len(), 1);
+    assert_eq!(results_the_lower[0].text, "the");
 
-   let results_the_upper = pattern::find_all("The", text).unwrap();
-   assert_eq!(results_the_upper.len(), 1);
-   assert_eq!(results_the_upper[0].text, "The");
-
+    let results_the_upper = pattern::find_all("The", text).unwrap();
+    assert_eq!(results_the_upper.len(), 1);
+    assert_eq!(results_the_upper[0].text, "The");
 }
