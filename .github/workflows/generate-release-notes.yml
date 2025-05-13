@@ -23,7 +23,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Important pour obtenir l'historique complet des commits
+          fetch-depth: 0
 
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@master
@@ -34,11 +34,12 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install cargo-semver-checks
         run: cargo install cargo-semver-checks --locked
@@ -54,8 +55,9 @@ jobs:
       - name: Get release version
         id: get_version
         run: |
-          # Extraire la version de la branche (par exemple, "release/1.2.3" -> "1.2.3")
           BRANCH="${GITHUB_REF##*/}"
+          echo "GITHUB_REF: $GITHUB_REF"
+          echo "Extracted BRANCH: $BRANCH"
           if [[ "$BRANCH" == "master" ]]; then
             VERSION="master"
           elif [[ "$BRANCH" == "release/"* ]]; then
