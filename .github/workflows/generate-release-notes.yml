@@ -29,12 +29,22 @@ jobs:
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
+      
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.toml', '**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
 
       - name: Install cargo-semver-checks
         run: cargo install cargo-semver-checks --locked
 
       - name: Run release-please
-        uses: google-github-actions/release-please-action@v4
+        uses: googleapis/release-please-action@v4
         with:
           release-type: rust
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -49,6 +59,8 @@ jobs:
           if [[ "$BRANCH" == "master" ]]; then
             VERSION="master"
           elif [[ "$BRANCH" == "release/"* ]]; then
+            VERSION="${BRANCH#release/}"
+          elif [[ "$BRANCH" == "develop" ]]; then
             VERSION="${BRANCH#release/}"
           else
             VERSION="unknown"
