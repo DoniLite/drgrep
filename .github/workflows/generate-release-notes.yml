@@ -61,7 +61,7 @@ jobs:
           elif [[ "$BRANCH" == "release/"* ]]; then
             VERSION="${BRANCH#release/}"
           elif [[ "$BRANCH" == "develop" ]]; then
-            VERSION="${BRANCH#release/}"
+            VERSION="develop"
           else
             VERSION="unknown"
           fi
@@ -92,6 +92,7 @@ jobs:
         
         # Utilisez upload-artifact pour rendre l'archive disponible pour d'autres jobs/workflows
       - name: Upload artifact
+        if: env.VERSION != 'unknown'
         uses: actions/upload-artifact@v4
         with:
           name: release-notes-${{ env.VERSION }}
