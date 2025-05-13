@@ -41,7 +41,19 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Check for cargo-semver-checks in cache
+        id: check_semver
+        run: |
+          if [ -x "$CARGO_HOME/bin/cargo-semver-checks" ]; then
+            echo "cargo-semver-checks found in cache"
+            echo "SEMVER_INSTALLED=true" >> $GITHUB_ENV
+          else
+            echo "cargo-semver-checks not found in cache"
+            echo "SEMVER_INSTALLED=false" >> $GITHUB_ENV
+          fi
+
       - name: Install cargo-semver-checks
+        if: env.SEMVER_INSTALLED == 'false'
         run: cargo install cargo-semver-checks --locked
 
       - name: Run release-please
