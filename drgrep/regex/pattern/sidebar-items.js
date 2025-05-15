@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["PatternElement","PatternError","QuantifierType"],"fn":["find","find_all","is_match","replace_all"],"struct":["Match","SimplePattern"]};
+window.SIDEBAR_ITEMS = {"enum":["PatternError"],"fn":["find","find_all","is_match","replace_all","replace_all_with","split"],"struct":["Match","RegexPattern"]};
