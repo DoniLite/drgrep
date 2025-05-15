@@ -1,7 +1,7 @@
 // tests/integration_test.rs
 
 use drgrep::{
-    args::parser::ArgParser, regex::pattern::SimplePattern, search_insensitive_case,
+    args::parser::ArgParser, regex::pattern::RegexPattern, search_insensitive_case,
     search_sensitive_case, Config,
 };
 use std::collections::HashMap;
@@ -47,7 +47,7 @@ fn test_config_creation() {
 #[test]
 fn test_pattern_usage() {
     // Test pattern creation and matching
-    let pattern = SimplePattern::new("\\w+").unwrap();
+    let pattern = RegexPattern::new("\\w+").unwrap();
 
     assert!(pattern.is_match("Hello"));
     assert!(!pattern.is_match(" "));

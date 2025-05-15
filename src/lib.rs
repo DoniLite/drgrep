@@ -50,7 +50,7 @@ pub use regex::pattern::find;
 pub use regex::pattern::find_all;
 pub use regex::pattern::is_match;
 pub use regex::pattern::replace_all;
-use regex::pattern::SimplePattern;
+use regex::pattern::RegexPattern;
 
 /// The config struct
 #[derive(Debug)]
@@ -59,7 +59,7 @@ pub struct Config<'a> {
     pub search_content: Option<&'a str>,
     pub file_path: Option<&'a str>,
     pub files: Option<Vec<&'a str>>,
-    pub regex: Option<regex::pattern::SimplePattern>,
+    pub regex: Option<regex::pattern::RegexPattern>,
     pub sensitive: bool,
     path_is_dir: bool,
 }
@@ -83,6 +83,8 @@ drgrep [args]
 -c content <optional:true> => The content in which the program will process can be provided as string
 -s sensitive <optional:true> => Use this to setup a sensitive case config you can use it with the env variables via : [DRGREP_SENSITIVE_CASE]
 ";
+
+pub static VERSION: &str = "v0.3.2";
 
 impl<'a> Config<'a> {
     pub fn new(args: &'a args::parser::ArgParser) -> Result<Self, &'static str> {
@@ -142,13 +144,13 @@ impl<'a> Config<'a> {
             None
         };
         let regex = match args.get("regex") {
-            Some(value) => match regex::pattern::SimplePattern::new(value) {
+            Some(value) => match regex::pattern::RegexPattern::new(value) {
                 Ok(val) => Some(val),
                 Err(_) => return Err("Error during the creating of the current regex"),
             },
             None => {
                 if let Some(value) = args.get("r") {
-                    if let Ok(r) = regex::pattern::SimplePattern::new(value) {
+                    if let Ok(r) = regex::pattern::RegexPattern::new(value) {
                         Some(r)
                     } else {
                         return Err("Error during the creating of the current regex");
@@ -456,7 +458,7 @@ pub fn search_word_insensitive_case<'a, 'b>(
 }
 
 pub fn search_with_regex<'a, 'b>(
-    regex: &SimplePattern,
+    regex: &RegexPattern,
     source: &'b str,
     content: &'a str,
 ) -> Vec<SearchResult<'a, 'b>> {
