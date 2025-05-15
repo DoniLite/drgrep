@@ -1,4 +1,4 @@
-use std::process;
+use std::process::{exit};
 
 use drgrep::{
     args::parser::ArgParser, run, Config, DEFAULT_MESSAGE,
@@ -7,12 +7,17 @@ use drgrep::{
 fn main() {
     let args: &ArgParser = &Default::default();
 
+    if args.has("version") || args.has("v") {
+        println!("{}", drgrep::VERSION);
+        exit(0);
+    }
+
     let config = Config::new(args).unwrap_or_else(|_: &str| {
         println!("{}", DEFAULT_MESSAGE);
-        process::exit(1);
+        exit(1);
     });
     if let Err(e) = run(config) {
         eprintln!("An error occurred {}", e);
-        process::exit(1);
+        exit(1);
     };
 }

@@ -83,12 +83,6 @@ drgrep -k error -p application.log
 drgrep -r \\w\\w\\w\\w\\w -p document.txt
 ```
 
-### Using with a pipe
-
-```sh
-cat data.txt | drgrep -k important data
-```
-
 And other advanced regex features...
 
 ## 🌱 Contributing

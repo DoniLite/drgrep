@@ -50,6 +50,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -101,12 +112,13 @@ jobs:
           path: artifacts
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: |
             artifacts/drgrep-linux
             artifacts/drgrep-windows.exe
             artifacts/drgrep-macos
+          body_path: RELEASE_NOTES.md
           draft: false
           prerelease: false
         env:

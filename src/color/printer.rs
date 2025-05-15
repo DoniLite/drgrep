@@ -192,7 +192,7 @@ mod tests {
     #[allow(dead_code)]
     fn capture_stdout<F>(f: F) -> String
     where
-        F: FnOnce() -> ()
+        F: FnOnce()
     {
         // In a real test, you would use a crate like `capture-stdout` or similar
         // This is a simplified version that doesn't actually capture output
