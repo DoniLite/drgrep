@@ -66,7 +66,7 @@ Examples:
 ### Basic Regex searching in the `.github/`
 
 ```sh
-cargo run -- -r Rust -p ./.github
+drgrep -r Rust -p ./.github
 ```
 
 Output: ![image](./assets/Capture%20d’écran%20du%202025-04-17%2020-40-36.png)
