@@ -61,6 +61,10 @@ impl ArgParser {
     pub fn has(&self, key: &str) -> bool {
         self.args.contains_key(key)
     }
+
+    pub fn set(&mut self, key: &str, val: String) {
+        self.args.insert(key.to_string(), Some(val));
+    }
 }
 
 impl Default for ArgParser  {

@@ -50,7 +50,8 @@ pub use regex::pattern::find;
 pub use regex::pattern::find_all;
 pub use regex::pattern::is_match;
 pub use regex::pattern::replace_all;
-use regex::pattern::RegexPattern;
+pub use regex::pattern::RegexPattern;
+pub use utilities::read_stdin;
 
 /// The config struct
 #[derive(Debug)]
@@ -74,14 +75,16 @@ pub struct SearchResult<'a, 'b> {
 pub static DEFAULT_MESSAGE: &str = "\
 drgrep is a CLI searching tool
 Usage:
-drgrep [args]
+drgrep --[args]/-[flag]
 
-[args]
--k key <optional:false> => The word that you want to search
--p path <optional:true>, <default: '/'> => The path of the file which you want to provide searching
--r regex <optional:true> => The regex expression to use for matching
--c content <optional:true> => The content in which the program will process can be provided as string
--s sensitive <optional:true> => Use this to setup a sensitive case config you can use it with the env variables via : [DRGREP_SENSITIVE_CASE]
+[flags]-[args]
+-h --help => Print this default help message
+-v --version => Print the current version of the drgrep software
+-k --key <optional:false> => The word that you want to search
+-p --path <optional:true>, <default: '/'> => The path of the file which you want to provide searching
+-r --regex <optional:true> => The regex expression to use for matching
+-c --content <optional:true> => The content in which the program will process can be provided as string
+-s --sensitive <optional:true> => Use this to setup a sensitive case config you can use it with the env variables via : [DRGREP_SENSITIVE_CASE]
 ";
 
 pub static VERSION: &str = "v0.3.2";
@@ -115,7 +118,6 @@ impl<'a> Config<'a> {
                     is_dir = true;
                     Some(value.as_str())
                 } else {
-                    is_dir = true;
                     None
                 }
             }
@@ -133,7 +135,6 @@ impl<'a> Config<'a> {
                         None
                     }
                 } else {
-                    is_dir = true;
                     None
                 }
             }
@@ -162,8 +163,16 @@ impl<'a> Config<'a> {
         };
         let search_content = match args.get("content") {
             Some(c) => Some(c.as_str()),
-            None => args.get("c").as_ref().map(|v| v.as_str()),
+            None => {
+                if let Some(c) = args.get("c") {
+                    Some(c.as_str())
+                } else {
+                    is_dir = true;
+                    None
+                }
+            }
         };
+        // println!("search content in args: {}", search_content.unwrap());
         let sensitive = match args.get("sensitive") {
             Some(_) => true,
             None => match args.get("s") {
@@ -201,14 +210,12 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                         format!("source: {}", result.source).as_str(),
                         color::config::Color::BRIGHT_BLUE
                     );
-                    println!();
                     print_colored!(
                         format!("line: {}", result.idx).as_str(),
                         color::config::Color::RED
                     );
-                    println!();
                     print_partial_colored!(&result.line);
-                    println!("===========================");
+                    println!("=================================\n");
                 }
                 return Ok(());
             } else if config.sensitive {
@@ -218,14 +225,12 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                             format!("source: {}", result.source).as_str(),
                             color::config::Color::BRIGHT_BLUE
                         );
-                        println!();
                         print_colored!(
                             format!("line: {}", result.idx).as_str(),
                             color::config::Color::RED
                         );
-                        println!();
                         print_partial_colored!(&result.line);
-                        println!("===========================");
+                        println!("=================================\n");
                     }
                 }
                 return Ok(());
@@ -235,18 +240,17 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                         format!("source: {}", result.source).as_str(),
                         color::config::Color::BRIGHT_BLUE
                     );
-                    println!();
                     print_colored!(
                         format!("line: {}", result.idx).as_str(),
                         color::config::Color::RED
                     );
-                    println!();
                     print_partial_colored!(&result.line);
-                    println!("===========================");
+                    println!("=================================\n");
                 }
             }
             return Ok(());
         } else if let Some(content) = config.search_content {
+            // println!("search content {}", content);
             if let Some(key) = config.search_key {
                 if config.sensitive {
                     for result in search_word_sensitive_case(key, "", content) {
@@ -254,9 +258,8 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                             format!("line: {}", result.idx).as_str(),
                             color::config::Color::RED
                         );
-                        println!();
                         print_partial_colored!(&result.line);
-                        println!("===========================");
+                        println!("=================================\n");
                     }
                 } else {
                     for result in search_word_insensitive_case(key, "", content) {
@@ -264,21 +267,18 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                             format!("line: {}", result.idx).as_str(),
                             color::config::Color::RED
                         );
-                        println!();
                         print_partial_colored!(&result.line);
-                        println!("===========================");
+                        println!("=================================\n");
                     }
                 }
             } else if let Some(reg) = config.regex {
                 for result in search_with_regex(&reg, "", content) {
-                    println!();
                     print_colored!(
                         format!("line: {}", result.idx).as_str(),
                         color::config::Color::RED
                     );
-                    println!();
                     print_partial_colored!(&result.line);
-                    println!("===========================");
+                    println!("=================================\n");
                 }
             }
         }
@@ -314,14 +314,12 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                                             format!("source: {}", result.source).as_str(),
                                             color::config::Color::BRIGHT_BLUE
                                         );
-                                        println!();
                                         print_colored!(
                                             format!("line: {}", result.idx).as_str(),
                                             color::config::Color::RED
                                         );
-                                        println!();
                                         print_partial_colored!(&result.line);
-                                        println!("===========================");
+                                        println!("=================================\n");
                                     }
                                     return;
                                 }
@@ -336,14 +334,12 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                                                 format!("source: {}", result.source).as_str(),
                                                 color::config::Color::BRIGHT_BLUE
                                             );
-                                            println!();
                                             print_colored!(
                                                 format!("line: {}", result.idx).as_str(),
                                                 color::config::Color::RED
                                             );
-                                            println!();
                                             print_partial_colored!(&result.line);
-                                            println!("===========================");
+                                            println!("=================================\n");
                                         }
                                     }
                                 } else if let Some(key) = config.search_key {
@@ -356,14 +352,12 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                                             format!("source: {}", result.source).as_str(),
                                             color::config::Color::BRIGHT_BLUE
                                         );
-                                        println!();
                                         print_colored!(
                                             format!("line: {}", result.idx).as_str(),
                                             color::config::Color::RED
                                         );
-                                        println!();
                                         print_partial_colored!(&result.line);
-                                        println!("===========================");
+                                        println!("=================================\n");
                                     }
                                 }
                             }
@@ -495,7 +489,7 @@ mod utilities {
         env,
         error::Error,
         fs::{self, DirEntry},
-        io::{self, Read},
+        io::{self, stdin, Read},
         path::PathBuf,
         rc::Rc,
     };
@@ -574,20 +568,11 @@ mod utilities {
         Ok(())
     }
 
-    // fn visit_dirs_recursive(dir: &Path, outputs: Rc<RefCell<Vec<String>>>) -> io::Result<()> {
-    //     if dir.is_dir() {
-    //         for entry in fs::read_dir(dir)? {
-    //             let entry = entry?;
-    //             let path = entry.path();
-    //             if path.is_dir() {
-    //                 visit_dirs_recursive(&path, Rc::clone(&outputs))?;
-    //             } else if let Some(s) = path.to_str() {
-    //                 outputs.borrow_mut().push(s.to_string());
-    //             }
-    //         }
-    //     }
-    //     Ok(())
-    // }
+    pub fn read_stdin() -> io::Result<String> {
+        let mut buffer = String::new();
+        stdin().read_to_string(&mut buffer)?;
+        Ok(buffer)
+    }
 }
 
 #[cfg(test)]
