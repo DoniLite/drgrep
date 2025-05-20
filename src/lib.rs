@@ -163,7 +163,14 @@ impl<'a> Config<'a> {
         };
         let search_content = match args.get("content") {
             Some(c) => Some(c.as_str()),
-            None => args.get("c").as_ref().map(|v| v.as_str()),
+            None => {
+                if let Some(c) = args.get("c") {
+                    Some(c.as_str())
+                } else {
+                    is_dir = true;
+                    None
+                }
+            }
         };
         // println!("search content in args: {}", search_content.unwrap());
         let sensitive = match args.get("sensitive") {
@@ -203,14 +210,12 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                         format!("source: {}", result.source).as_str(),
                         color::config::Color::BRIGHT_BLUE
                     );
-                    println!();
                     print_colored!(
                         format!("line: {}", result.idx).as_str(),
                         color::config::Color::RED
                     );
-                    println!();
                     print_partial_colored!(&result.line);
-                    println!("===========================");
+                    println!("=================================\n");
                 }
                 return Ok(());
             } else if config.sensitive {
@@ -220,14 +225,12 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                             format!("source: {}", result.source).as_str(),
                             color::config::Color::BRIGHT_BLUE
                         );
-                        println!();
                         print_colored!(
                             format!("line: {}", result.idx).as_str(),
                             color::config::Color::RED
                         );
-                        println!();
                         print_partial_colored!(&result.line);
-                        println!("===========================");
+                        println!("=================================\n");
                     }
                 }
                 return Ok(());
@@ -237,14 +240,12 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                         format!("source: {}", result.source).as_str(),
                         color::config::Color::BRIGHT_BLUE
                     );
-                    println!();
                     print_colored!(
                         format!("line: {}", result.idx).as_str(),
                         color::config::Color::RED
                     );
-                    println!();
                     print_partial_colored!(&result.line);
-                    println!("===========================");
+                    println!("=================================\n");
                 }
             }
             return Ok(());
@@ -257,9 +258,8 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                             format!("line: {}", result.idx).as_str(),
                             color::config::Color::RED
                         );
-                        println!();
                         print_partial_colored!(&result.line);
-                        println!("===========================");
+                        println!("=================================\n");
                     }
                 } else {
                     for result in search_word_insensitive_case(key, "", content) {
@@ -267,21 +267,18 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                             format!("line: {}", result.idx).as_str(),
                             color::config::Color::RED
                         );
-                        println!();
                         print_partial_colored!(&result.line);
-                        println!("===========================");
+                        println!("=================================\n");
                     }
                 }
             } else if let Some(reg) = config.regex {
                 for result in search_with_regex(&reg, "", content) {
-                    println!();
                     print_colored!(
                         format!("line: {}", result.idx).as_str(),
                         color::config::Color::RED
                     );
-                    println!();
                     print_partial_colored!(&result.line);
-                    println!("===========================");
+                    println!("=================================\n");
                 }
             }
         }
@@ -317,14 +314,12 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                                             format!("source: {}", result.source).as_str(),
                                             color::config::Color::BRIGHT_BLUE
                                         );
-                                        println!();
                                         print_colored!(
                                             format!("line: {}", result.idx).as_str(),
                                             color::config::Color::RED
                                         );
-                                        println!();
                                         print_partial_colored!(&result.line);
-                                        println!("===========================");
+                                        println!("=================================\n");
                                     }
                                     return;
                                 }
@@ -339,14 +334,12 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                                                 format!("source: {}", result.source).as_str(),
                                                 color::config::Color::BRIGHT_BLUE
                                             );
-                                            println!();
                                             print_colored!(
                                                 format!("line: {}", result.idx).as_str(),
                                                 color::config::Color::RED
                                             );
-                                            println!();
                                             print_partial_colored!(&result.line);
-                                            println!("===========================");
+                                            println!("=================================\n");
                                         }
                                     }
                                 } else if let Some(key) = config.search_key {
@@ -359,14 +352,12 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
                                             format!("source: {}", result.source).as_str(),
                                             color::config::Color::BRIGHT_BLUE
                                         );
-                                        println!();
                                         print_colored!(
                                             format!("line: {}", result.idx).as_str(),
                                             color::config::Color::RED
                                         );
-                                        println!();
                                         print_partial_colored!(&result.line);
-                                        println!("===========================");
+                                        println!("=================================\n");
                                     }
                                 }
                             }
@@ -582,21 +573,6 @@ mod utilities {
         stdin().read_to_string(&mut buffer)?;
         Ok(buffer)
     }
-
-    // fn visit_dirs_recursive(dir: &Path, outputs: Rc<RefCell<Vec<String>>>) -> io::Result<()> {
-    //     if dir.is_dir() {
-    //         for entry in fs::read_dir(dir)? {
-    //             let entry = entry?;
-    //             let path = entry.path();
-    //             if path.is_dir() {
-    //                 visit_dirs_recursive(&path, Rc::clone(&outputs))?;
-    //             } else if let Some(s) = path.to_str() {
-    //                 outputs.borrow_mut().push(s.to_string());
-    //             }
-    //         }
-    //     }
-    //     Ok(())
-    // }
 }
 
 #[cfg(test)]
