@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["can_read_to_utf8","visit_dirs"],"struct":["GitIgnoreFiles"]};
+window.SIDEBAR_ITEMS = {"fn":["can_read_to_utf8","read_stdin","visit_dirs"],"struct":["GitIgnoreFiles"]};

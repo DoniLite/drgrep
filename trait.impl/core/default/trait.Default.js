@@ -1,5 +1,5 @@
 (function() {
-    var implementors = Object.fromEntries([["drgrep",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.86.0/core/default/trait.Default.html\" title=\"trait core::default::Default\">Default</a> for <a class=\"struct\" href=\"drgrep/args/parser/struct.ArgParser.html\" title=\"struct drgrep::args::parser::ArgParser\">ArgParser</a>"]]]]);
+    var implementors = Object.fromEntries([["drgrep",[["impl <a class=\"trait\" href=\"https://doc.rust-lang.org/1.87.0/core/default/trait.Default.html\" title=\"trait core::default::Default\">Default</a> for <a class=\"struct\" href=\"drgrep/args/parser/struct.ArgParser.html\" title=\"struct drgrep::args::parser::ArgParser\">ArgParser</a>"]]]]);
     if (window.register_implementors) {
         window.register_implementors(implementors);
     } else {
