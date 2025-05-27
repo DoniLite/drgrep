@@ -3,14 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - "v*"
-    branches:
-      - master
-      - release/*
-  pull_request:
-    branches:
-      - master
-      - release/*
+      - 'v*'
 
 jobs:
   check_tag:
