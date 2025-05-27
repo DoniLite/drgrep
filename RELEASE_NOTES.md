@@ -1,4 +1,4 @@
-# 📦 drgrep v0.3.2 – Release Date: 2025-05-15
+# 📦 drgrep v0.2.2 – Release Date: 2025-05-15
 
 ## 🚀 New Features
 
@@ -8,7 +8,6 @@
 - 🚀 **strong regex integration**: Moving to new [regex](https://crates.io/crates/regex) engine with all needed support and more performance!
   1. Add new struct for the regex support `RegexPattern`
   2. New utility functions
-- 🎯 **CLI replacement in matched occurrences**: All the matched files can now be replace with any expression using regex
 - 💯 **Version checker CLI**: Add command to check your installation and the current version of the program
 
 ## 🐛 Bug Fixes
@@ -37,15 +36,15 @@ This comes with a new feature that will make possible to replace all matched occ
 1. Remove the existing binary (if your installation is manual).
 2. Download the latest release from [GitHub Releases](https://github.com/DoniLite/drgrep/releases).
 3. Add the new executable to your bin and export the path.
-4. Run `drgrep --version` to confirm the update.
+4. Run `drgrep --version | drgrep -v` to confirm the update.
 
 > For more information about installation mode check the [README](https://github.com/DoniLite/drgrep#%EF%B8%8F-installation)
 
 ## 📚 Documentation
 
-- Get the documentation [here](https://github.com/DoniLite/drgrep#)
+- Get the documentation [on this page](https://github.com/DoniLite/drgrep#)
 - The [website](https://donilite.github.io/drgrep/) of the project
 
 ## 🙌 Acknowledgements
 
-- 👏 thanks to @DoniLite the main contributor to these release
+- 👏 thanks to [@DoniLite](https://github.com/DoniLite) the main contributor to these release
