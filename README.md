@@ -98,4 +98,4 @@ Please follow standard open-source contribution practices.
 
 ## 📜 License
 
-This project is distributed under the MIT License. See the LICENSE file for more details.
+This project is distributed under the `MIT` License. See the LICENSE file for more details.
