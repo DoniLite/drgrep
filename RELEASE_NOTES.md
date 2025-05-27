@@ -36,7 +36,7 @@ This comes with a new feature that will make possible to replace all matched occ
 1. Remove the existing binary (if your installation is manual).
 2. Download the latest release from [GitHub Releases](https://github.com/DoniLite/drgrep/releases).
 3. Add the new executable to your bin and export the path.
-4. Run `drgrep --version | drgrep -v` to confirm the update.
+4. Run `drgrep --version / drgrep -v` to confirm the update.
 
 > For more information about installation mode check the [README](https://github.com/DoniLite/drgrep#%EF%B8%8F-installation)
 
@@ -47,4 +47,4 @@ This comes with a new feature that will make possible to replace all matched occ
 
 ## 🙌 Acknowledgements
 
-- 👏 thanks to [@DoniLite](https://github.com/DoniLite) the main contributor to these release
+- 👏 thanks to [@DoniLite](https://github.com/DoniLite) the main contributor to this release
