@@ -83,6 +83,12 @@ drgrep -k error -p application.log
 drgrep -r \\w\\w\\w\\w\\w -p document.txt
 ```
 
+### Using pipe
+
+```sh
+docker images | drgrep -k postgres -c @ # Be sure to pass this to tell the program to read the standard output
+```
+
 And other advanced regex features...
 
 ## 🌱 Contributing
