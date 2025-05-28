@@ -51,6 +51,7 @@ pub use regex::pattern::find_all;
 pub use regex::pattern::is_match;
 pub use regex::pattern::replace_all;
 pub use regex::pattern::RegexPattern;
+pub use regex::pattern::RegexPattern as SimplePattern;
 pub use utilities::read_stdin;
 
 /// The config struct
@@ -87,7 +88,7 @@ drgrep --[args]/-[flag]
 -s --sensitive <optional:true> => Use this to setup a sensitive case config you can use it with the env variables via : [DRGREP_SENSITIVE_CASE]
 ";
 
-pub static VERSION: &str = "v0.3.2";
+pub static VERSION: &str = "v0.2.3";
 
 impl<'a> Config<'a> {
     pub fn new(args: &'a args::parser::ArgParser) -> Result<Self, &'static str> {

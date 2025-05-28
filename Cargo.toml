@@ -1,6 +1,6 @@
 [package]
 name = "drgrep"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 license-file = "LICENSE"
 description = "A Rust implementation of the grep software with more support and features for args, workspace scanning and CLI"
