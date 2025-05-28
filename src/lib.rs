@@ -37,7 +37,7 @@ pub mod regex;
 pub mod temp_dir;
 
 use std::env;
-use std::fs::ReadDir;
+use std::fs::{DirEntry, ReadDir};
 use std::path::{Path, PathBuf};
 use std::{error::Error, fs, path};
 
@@ -51,6 +51,7 @@ pub use regex::pattern::find_all;
 pub use regex::pattern::is_match;
 pub use regex::pattern::replace_all;
 pub use regex::pattern::RegexPattern;
+pub use regex::pattern::RegexPattern as SimplePattern;
 pub use utilities::read_stdin;
 
 /// The config struct
@@ -59,7 +60,6 @@ pub struct Config<'a> {
     pub search_key: Option<&'a str>,
     pub search_content: Option<&'a str>,
     pub file_path: Option<&'a str>,
-    pub files: Option<Vec<&'a str>>,
     pub regex: Option<regex::pattern::RegexPattern>,
     pub sensitive: bool,
     path_is_dir: bool,
@@ -87,7 +87,7 @@ drgrep --[args]/-[flag]
 -s --sensitive <optional:true> => Use this to setup a sensitive case config you can use it with the env variables via : [DRGREP_SENSITIVE_CASE]
 ";
 
-pub static VERSION: &str = "v0.3.2";
+pub static VERSION: &str = "v0.2.3";
 
 impl<'a> Config<'a> {
     pub fn new(args: &'a args::parser::ArgParser) -> Result<Self, &'static str> {
@@ -104,18 +104,14 @@ impl<'a> Config<'a> {
             Some(value) => Some(value.as_str()),
             None => args.get("k").as_ref().map(|v| v.as_str()),
         };
-        let split_search_key: Vec<&str> = match search_key {
-            Some(k) => k.split(',').collect(),
-            None => vec![],
-        };
-        let mut is_dir = false;
+        let mut is_dir = true;
         let file_path = match args.get("path") {
             Some(value) => {
                 let path = Path::new(value);
                 if path.is_file() {
+                    is_dir = false;
                     Some(value.as_str())
                 } else if path.is_dir() {
-                    is_dir = true;
                     Some(value.as_str())
                 } else {
                     None
@@ -126,23 +122,17 @@ impl<'a> Config<'a> {
                 if let Some(pth) = p {
                     let path = Path::new(pth);
                     if path.is_file() {
+                        is_dir = false;
                         p
                     } else if path.is_dir() {
-                        is_dir = true;
                         p
                     } else {
-                        is_dir = true;
                         None
                     }
                 } else {
                     None
                 }
             }
-        };
-        let files = if split_search_key.len() >= 2 {
-            Some(split_search_key)
-        } else {
-            None
         };
         let regex = match args.get("regex") {
             Some(value) => match regex::pattern::RegexPattern::new(value) {
@@ -165,14 +155,13 @@ impl<'a> Config<'a> {
             Some(c) => Some(c.as_str()),
             None => {
                 if let Some(c) = args.get("c") {
+                    is_dir = false;
                     Some(c.as_str())
                 } else {
-                    is_dir = true;
                     None
                 }
             }
         };
-        // println!("search content in args: {}", search_content.unwrap());
         let sensitive = match args.get("sensitive") {
             Some(_) => true,
             None => match args.get("s") {
@@ -184,7 +173,6 @@ impl<'a> Config<'a> {
         Ok(Config {
             search_key,
             file_path,
-            files,
             sensitive,
             regex,
             search_content,
@@ -291,6 +279,66 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     } else {
         files = fs::read_dir(Path::new("./"))?;
     }
+
+    let handle_files: &dyn Fn(&DirEntry) = &|f| {
+        if let Ok(f_type) = f.file_type() {
+            if f_type.is_file() && !ignore.is_ignored(&f.path(), &current_dir) {
+                if let Ok(content) = utilities::can_read_to_utf8(&f.path()) {
+                    if let Some(reg) = &config.regex {
+                        for result in search_with_regex(reg, f.path().to_str().unwrap(), &content) {
+                            print_colored!(
+                                format!("source: {}", result.source).as_str(),
+                                color::config::Color::BRIGHT_BLUE
+                            );
+                            print_colored!(
+                                format!("line: {}", result.idx).as_str(),
+                                color::config::Color::RED
+                            );
+                            print_partial_colored!(&result.line);
+                            println!("=================================\n");
+                        }
+                        return;
+                    }
+                    if config.sensitive {
+                        if let Some(key) = config.search_key {
+                            for result in search_word_sensitive_case(
+                                key,
+                                f.path().to_str().unwrap(),
+                                &content,
+                            ) {
+                                print_colored!(
+                                    format!("source: {}", result.source).as_str(),
+                                    color::config::Color::BRIGHT_BLUE
+                                );
+                                print_colored!(
+                                    format!("line: {}", result.idx).as_str(),
+                                    color::config::Color::RED
+                                );
+                                print_partial_colored!(&result.line);
+                                println!("=================================\n");
+                            }
+                        }
+                    } else if let Some(key) = config.search_key {
+                        for result in
+                            search_word_insensitive_case(key, f.path().to_str().unwrap(), &content)
+                        {
+                            print_colored!(
+                                format!("source: {}", result.source).as_str(),
+                                color::config::Color::BRIGHT_BLUE
+                            );
+                            print_colored!(
+                                format!("line: {}", result.idx).as_str(),
+                                color::config::Color::RED
+                            );
+                            print_partial_colored!(&result.line);
+                            println!("=================================\n");
+                        }
+                    }
+                }
+            }
+        }
+    };
+
     files
         .filter(|f| {
             if let Ok(entry) = f {
@@ -302,69 +350,12 @@ pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
         })
         .for_each(|el| {
             if let Ok(f) = el {
-                utilities::visit_dirs(&f.path(), &|f| {
-                    if let Ok(f_type) = f.file_type() {
-                        if f_type.is_file() && !ignore.is_ignored(&f.path(), &current_dir) {
-                            if let Ok(content) = utilities::can_read_to_utf8(&f.path()) {
-                                if let Some(reg) = &config.regex {
-                                    for result in
-                                        search_with_regex(reg, f.path().to_str().unwrap(), &content)
-                                    {
-                                        print_colored!(
-                                            format!("source: {}", result.source).as_str(),
-                                            color::config::Color::BRIGHT_BLUE
-                                        );
-                                        print_colored!(
-                                            format!("line: {}", result.idx).as_str(),
-                                            color::config::Color::RED
-                                        );
-                                        print_partial_colored!(&result.line);
-                                        println!("=================================\n");
-                                    }
-                                    return;
-                                }
-                                if config.sensitive {
-                                    if let Some(key) = config.search_key {
-                                        for result in search_word_sensitive_case(
-                                            key,
-                                            f.path().to_str().unwrap(),
-                                            &content,
-                                        ) {
-                                            print_colored!(
-                                                format!("source: {}", result.source).as_str(),
-                                                color::config::Color::BRIGHT_BLUE
-                                            );
-                                            print_colored!(
-                                                format!("line: {}", result.idx).as_str(),
-                                                color::config::Color::RED
-                                            );
-                                            print_partial_colored!(&result.line);
-                                            println!("=================================\n");
-                                        }
-                                    }
-                                } else if let Some(key) = config.search_key {
-                                    for result in search_word_insensitive_case(
-                                        key,
-                                        f.path().to_str().unwrap(),
-                                        &content,
-                                    ) {
-                                        print_colored!(
-                                            format!("source: {}", result.source).as_str(),
-                                            color::config::Color::BRIGHT_BLUE
-                                        );
-                                        print_colored!(
-                                            format!("line: {}", result.idx).as_str(),
-                                            color::config::Color::RED
-                                        );
-                                        print_partial_colored!(&result.line);
-                                        println!("=================================\n");
-                                    }
-                                }
-                            }
-                        }
-                    }
-                })
-                .unwrap_or_else(|err| panic!("{}", err))
+                if f.path().is_file() {
+                    handle_files(&f);
+                    return;
+                }
+                utilities::visit_dirs(&f.path(), handle_files)
+                    .unwrap_or_else(|err| panic!("{}", err))
             }
         });
     Ok(())
@@ -614,7 +605,6 @@ C'est pas rustique.";
             search_content: None,
             file_path: None,
             search_key: Some(recherche),
-            files: None,
             regex: None,
             sensitive: true,
             path_is_dir: false,
@@ -637,7 +627,6 @@ C'est pas rustique.";
             search_content: None,
             file_path: None,
             search_key: Some(recherche),
-            files: None,
             regex: None,
             sensitive: true,
             path_is_dir: false,

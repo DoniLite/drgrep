@@ -41,7 +41,6 @@ fn test_config_creation() {
     assert_eq!("test", config.search_key.unwrap());
     assert_eq!(Some("./src"), config.file_path);
     assert!(config.sensitive);
-    assert!(config.files.is_none());
 }
 
 #[test]
@@ -85,26 +84,6 @@ fn test_config_with_regex() {
     let pattern = config.regex.as_ref().unwrap();
     assert!(pattern.is_match("Hello"));
     assert!(!pattern.is_match(" "));
-}
-
-#[test]
-fn test_multiple_search_terms() {
-    // Test with comma-separated search terms
-    let mut args_map = HashMap::new();
-    args_map.insert("key".to_string(), Some("term1,term2,term3".to_string()));
-
-    let args = ArgParser { args: args_map };
-
-    // Create config from args
-    let config = Config::new(&args).unwrap();
-
-    // Verify files contains the split search terms
-    assert!(config.files.is_some());
-    let files = config.files.as_ref().unwrap();
-    assert_eq!(3, files.len());
-    assert_eq!("term1", files[0]);
-    assert_eq!("term2", files[1]);
-    assert_eq!("term3", files[2]);
 }
 
 #[test]
