@@ -31,10 +31,8 @@ fn main() {
     if args.has("c") {
         match args.get("c") {
             Some(content) => {
-                // println!("content key {}", content);
                 if content.as_str() == "@" {
                     if let Ok(stdin_content) = drgrep::read_stdin() {
-                        // println!("stdin content {}", stdin_content);
                         args.set("c", stdin_content);
                     }
                 }

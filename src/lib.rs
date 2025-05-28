@@ -108,7 +108,6 @@ impl<'a> Config<'a> {
         let file_path = match args.get("path") {
             Some(value) => {
                 let path = Path::new(value);
-                println!("Existing file path ====> {}", path.exists());
                 if path.is_file() {
                     is_dir = false;
                     Some(value.as_str())
@@ -122,7 +121,6 @@ impl<'a> Config<'a> {
                 let p = args.get("p").as_ref().map(|v| v.as_str());
                 if let Some(pth) = p {
                     let path = Path::new(pth);
-                    println!("Existing file path ====> {}", path.exists());
                     if path.is_file() {
                         is_dir = false;
                         p
@@ -136,8 +134,6 @@ impl<'a> Config<'a> {
                 }
             }
         };
-        // println!("File path content ====> {}", file_path.unwrap());
-        println!("Is dir =======> {}", is_dir);
         let regex = match args.get("regex") {
             Some(value) => match regex::pattern::RegexPattern::new(value) {
                 Ok(val) => Some(val),
@@ -166,7 +162,6 @@ impl<'a> Config<'a> {
                 }
             }
         };
-        println!("Is dir after file content =======> {}", is_dir);
         let sensitive = match args.get("sensitive") {
             Some(_) => true,
             None => match args.get("s") {
