@@ -56,7 +56,10 @@ impl RegexPattern {
     /// Creates a new regex pattern from a pattern string
     pub fn new(pattern: &str) -> Result<Self, PatternError> {
         let regex = Regex::new(pattern)?;
-        Ok(RegexPattern { regex, pattern: pattern.to_string() })
+        Ok(RegexPattern {
+            regex,
+            pattern: pattern.to_string(),
+        })
     }
 
     /// Returns the original pattern string

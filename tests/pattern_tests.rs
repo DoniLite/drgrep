@@ -64,19 +64,13 @@ fn test_regex_replace_functionality() {
     let text_with_names = "Name: John Doe, Age: 30";
     let result_with_capture =
         pattern::replace_all(r"(\w+): (\w+(?:\s\w+)*)", text_with_names, "$1 is $2").unwrap();
-    println!("Left:  \"{}\"", result_with_capture);
-    println!("Right: \"{}\"", "Name is John Doe, Age is 30");
     assert_eq!(result_with_capture, "Name is John Doe, Age is 30");
 
     // Replace with function
-    let result_with_fn = pattern::replace_all_with(
-        r"(\d+)",
-        "Number: 10, Double: 20",
-        |caps| {
-            let num: i32 = caps[1].parse().unwrap();
-            (num * 2).to_string()
-        },
-    )
+    let result_with_fn = pattern::replace_all_with(r"(\d+)", "Number: 10, Double: 20", |caps| {
+        let num: i32 = caps[1].parse().unwrap();
+        (num * 2).to_string()
+    })
     .unwrap();
     assert_eq!(result_with_fn, "Number: 20, Double: 40");
 }
