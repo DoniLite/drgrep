@@ -455,17 +455,16 @@ impl GlobPattern {
                 } else {
                     false
                 }
-            }
-            // Component::Alternatives(alternatives) => {
-            //     // This shouldn't be reached because we're expanding alternatives before matching
-            //     // But just in case, implement a simple matching
-            //     for alt in alternatives {
-            //         if GlobPattern::new(alt).matches(&text[text_pos..]) {
-            //             return true;
-            //         }
-            //     }
-            //     false
-            // }
+            } // Component::Alternatives(alternatives) => {
+              //     // This shouldn't be reached because we're expanding alternatives before matching
+              //     // But just in case, implement a simple matching
+              //     for alt in alternatives {
+              //         if GlobPattern::new(alt).matches(&text[text_pos..]) {
+              //             return true;
+              //         }
+              //     }
+              //     false
+              // }
         }
     }
 

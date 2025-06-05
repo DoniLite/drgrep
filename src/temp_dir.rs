@@ -1,4 +1,8 @@
-use std::{env, fs, path::PathBuf, time::{SystemTime, UNIX_EPOCH}};
+use std::{
+    env, fs,
+    path::PathBuf,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 pub fn create_temp_dir() -> std::io::Result<TempDir> {
     let timestamp = SystemTime::now()
