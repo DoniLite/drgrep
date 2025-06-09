@@ -1,5 +1,5 @@
 # drgrep ✨
-
+<!-- GitAds-Verify: R9KIL8CL5M8ZY1CSE5CLUV3ZX7ON8RRZ -->
 [![Build Status](https://github.com/DoniLite/drgrep/actions/workflows/build_release.yml/badge.svg)](https://github.com/DoniLite/drgrep/actions/workflows/build_release.yml)
 [![Tests Status](https://github.com/DoniLite/drgrep/actions/workflows/rust_test.yml/badge.svg)](https://github.com/DoniLite/drgrep/actions/workflows/rust_test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
