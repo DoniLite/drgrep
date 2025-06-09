@@ -7,6 +7,9 @@
 
 `drgrep` is a simple, fast command-line tool written in Rust for searching patterns in text, with minimal external dependencies (beyond Rust itself). It's inspired by `grep` but uses a **simplified** and **custom** regular expression (regex) engine, designed to be lightweight and easy to integrate.
 
+## GitAds Sponsored
+[![Sponsored by GitAds](https://gitads.dev/v1/ad-serve?source=donilite/drgrep@github)](https://gitads.dev/v1/ad-track?source=donilite/drgrep@github)
+
 ## 🚀 Features
 
 * **Simple Text Searching:** Find lines matching a given pattern in files or from standard input.
