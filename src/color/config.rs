@@ -54,7 +54,7 @@ pub struct Color;
 impl Color {
     /// Resets all colors and styles to terminal default
     pub const RESET: &'static str = "\x1b[0m";
-    
+
     // Text colors
     /// Black text color
     pub const BLACK: &'static str = "\x1b[30m";
@@ -72,7 +72,7 @@ impl Color {
     pub const CYAN: &'static str = "\x1b[36m";
     /// White text color
     pub const WHITE: &'static str = "\x1b[37m";
-    
+
     // Bright variants
     /// Bright black text color (usually gray)
     pub const BRIGHT_BLACK: &'static str = "\x1b[90m";
@@ -90,14 +90,13 @@ impl Color {
     pub const BRIGHT_CYAN: &'static str = "\x1b[96m";
     /// Bright white text color
     pub const BRIGHT_WHITE: &'static str = "\x1b[97m";
-    
+
     // Styles
     /// Bold text style
     pub const BOLD: &'static str = "\x1b[1m";
     /// Underline text style
     pub const UNDERLINE: &'static str = "\x1b[4m";
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -117,7 +116,7 @@ mod tests {
         // Test that colors can be combined with styles
         let bold_red = format!("{}{}", Color::BOLD, Color::RED);
         assert_eq!(bold_red, "\x1b[1m\x1b[31m");
-        
+
         // Test that reset works after combinations
         let bold_red_reset = format!("{}{}test{}", Color::BOLD, Color::RED, Color::RESET);
         assert_eq!(bold_red_reset, "\x1b[1m\x1b[31mtest\x1b[0m");
@@ -128,7 +127,7 @@ mod tests {
         // Check bright color codes
         assert_eq!(Color::BRIGHT_GREEN, "\x1b[92m");
         assert_eq!(Color::BRIGHT_YELLOW, "\x1b[93m");
-        
+
         // Test bright and normal color difference
         assert_ne!(Color::GREEN, Color::BRIGHT_GREEN);
         assert_ne!(Color::MAGENTA, Color::BRIGHT_MAGENTA);
@@ -139,7 +138,7 @@ mod tests {
         // Check style codes
         assert_eq!(Color::BOLD, "\x1b[1m");
         assert_eq!(Color::UNDERLINE, "\x1b[4m");
-        
+
         // Test style combination
         let bold_underline = format!("{}{}", Color::BOLD, Color::UNDERLINE);
         assert_eq!(bold_underline, "\x1b[1m\x1b[4m");

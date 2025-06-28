@@ -498,27 +498,25 @@ mod utilities {
             let cur_dir = if let Ok(p) = env::current_dir() {
                 p
             } else {
-                PathBuf::new()
+                let mut pb = PathBuf::new();
+                pb.push(".gitignore");
+                pb
             };
             if let Ok(content) = fs::read_to_string(Path::new(".gitignore")) {
                 // println!("gitignore content: \n {}", content);
-                content.lines().for_each(|l| {
+                content.lines().for_each(|line| {
                     patterns.push(Rc::new(GlobPattern::new(&format!(
                         "{}/{}",
                         cur_dir.display(),
-                        l
+                        line
                     ))));
-                    entries.push(Rc::new(l.to_string()));
+                    entries.push(Rc::new(line.to_string()));
                 });
             }
             patterns.push(Rc::new(GlobPattern::new(&format!(
                 "{}/.git/**",
                 cur_dir.display()
             ))));
-            // println!(
-            //     "format constructor for git: {}",
-            //     &format!("{}/.git/**", cur_dir.display())
-            // );
             Self {
                 pattern: patterns,
                 entries,
@@ -538,7 +536,7 @@ mod utilities {
     }
 
     pub fn can_read_to_utf8(path: &Path) -> Result<String, Box<dyn Error>> {
-        let mut file = fs::File::open(path)?;
+        let mut file = fs::File::open(path)?; 
         let mut buffer = Vec::new();
         file.read_to_end(&mut buffer)?;
         Ok(String::from_utf8(buffer)?)

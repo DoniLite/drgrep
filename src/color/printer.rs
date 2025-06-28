@@ -16,20 +16,20 @@
 //! ```rust
 //! use drgrep::color::config::Color;
 //! use drgrep::color::printer::{print_colored, print_styled, print_partial_colored};
-//! 
+//!
 //! // Print a line with a single color
 //! print_colored("This is an error message", Color::RED);
-//! 
+//!
 //! // Print text with both style and color
 //! print_styled("Important warning", Color::BOLD, Color::YELLOW);
-//! 
+//!
 //! // Print multiple text segments with different colors
 //! let parts = vec![
 //!     ("Success:", Color::GREEN),
 //!     ("File processed", Color::WHITE)
 //! ];
 //! print_partial_colored(&parts);
-//! 
+//!
 //! // Using macros (requires importing them)
 //! drgrep::print_colored!("Error detected", Color::RED);
 //! ```
@@ -181,18 +181,17 @@ macro_rules! print_partial_colored {
     }};
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::color::config::Color;
-    
+
     // Helper function to capture stdout for testing
     // Note: This approach has limitations and is primarily for demonstration
     #[allow(dead_code)]
     fn capture_stdout<F>(f: F) -> String
     where
-        F: FnOnce()
+        F: FnOnce(),
     {
         // In a real test, you would use a crate like `capture-stdout` or similar
         // This is a simplified version that doesn't actually capture output
@@ -218,10 +217,7 @@ mod tests {
 
     #[test]
     fn test_print_partial_colored() {
-        let parts = vec![
-            ("Part1", Color::RED),
-            ("Part2", Color::BLUE)
-        ];
+        let parts = vec![("Part1", Color::RED), ("Part2", Color::BLUE)];
         print_partial_colored(&parts);
         assert!(true);
     }
@@ -241,13 +237,10 @@ mod tests {
         // These should expand to the corresponding function calls
         crate::print_colored!("Macro test", Color::CYAN);
         crate::print_styled!("Styled macro test", Color::BOLD, Color::MAGENTA);
-        
-        let parts = vec![
-            ("MacroPart1", Color::GREEN),
-            ("MacroPart2", Color::YELLOW)
-        ];
+
+        let parts = vec![("MacroPart1", Color::GREEN), ("MacroPart2", Color::YELLOW)];
         crate::print_partial_colored!(&parts);
-        
+
         // If we reach here, the macros didn't cause any panics
         assert!(true);
     }

@@ -3,18 +3,16 @@
 
 use std::{collections::HashMap, env};
 
-
 /// ## Argument parser
 /// Use this struct to parser and localize environment variables in your code
-/// 
+///
 /// The constructor retrieve automatically the args inside the `std::env` and put it in a `HasMap`
-/// 
+///
 /// Use Helper to interact safely the provided args
 #[derive(Debug)]
 pub struct ArgParser {
     pub args: HashMap<String, Option<String>>,
 }
-
 
 impl ArgParser {
     /// Create a new instance of `ArgParser`
@@ -67,12 +65,11 @@ impl ArgParser {
     }
 }
 
-impl Default for ArgParser  {
+impl Default for ArgParser {
     fn default() -> Self {
         Self::new()
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -90,7 +87,7 @@ mod tests {
         let mut args = HashMap::new();
         args.insert("verbose".to_string(), None);
         let parser = ArgParser { args };
-        
+
         assert!(parser.has("verbose"));
         assert!(!parser.has("nonexistent"));
     }
@@ -101,7 +98,7 @@ mod tests {
         args.insert("file".to_string(), Some("test.txt".to_string()));
         args.insert("verbose".to_string(), None);
         let parser = ArgParser { args };
-        
+
         assert_eq!(parser.get("file"), &Some("test.txt".to_string()));
         assert_eq!(parser.get("verbose"), &None);
         assert_eq!(parser.get("nonexistent"), &None);

@@ -17,27 +17,21 @@ fn main() {
 
     // Catching the stdin if the user is using pipe
     if args.has("content") {
-        match args.get("content") {
-            Some(content) => {
-                if content.as_str() == "@" {
-                    if let Ok(stdin_content) = drgrep::read_stdin() {
-                        args.set("content", stdin_content);
-                    }
+        if let Some(content) = args.get("content") {
+            if content.as_str() == "@" {
+                if let Ok(stdin_content) = drgrep::read_stdin() {
+                    args.set("content", stdin_content);
                 }
             }
-            None => (),
         }
     }
     if args.has("c") {
-        match args.get("c") {
-            Some(content) => {
-                if content.as_str() == "@" {
-                    if let Ok(stdin_content) = drgrep::read_stdin() {
-                        args.set("c", stdin_content);
-                    }
+        if let Some(content) = args.get("c") {
+            if content.as_str() == "@" {
+                if let Ok(stdin_content) = drgrep::read_stdin() {
+                    args.set("c", stdin_content);
                 }
             }
-            None => (),
         }
     }
 
