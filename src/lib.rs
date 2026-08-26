@@ -72,7 +72,7 @@ pub struct SearchResult<'a, 'b> {
     pub idx: usize,
 }
 
-pub static DEFAULT_MESSAGE: &str = "\
+pub const DEFAULT_MESSAGE: &str = "\
 drgrep is a CLI searching tool
 Usage:
 drgrep --[args]/-[flag]
@@ -87,7 +87,7 @@ drgrep --[args]/-[flag]
 -s --sensitive <optional:true> => Use this to setup a sensitive case config you can use it with the env variables via : [DRGREP_SENSITIVE_CASE]
 ";
 
-pub static VERSION: &str = "v0.2.3";
+pub const VERSION: &str = "v0.2.3";
 
 impl<'a> Config<'a> {
     pub fn new(args: &'a args::parser::ArgParser) -> Result<Self, &'static str> {

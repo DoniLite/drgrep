@@ -28,6 +28,7 @@ fn main() {
             None => (),
         }
     }
+    
     if args.has("c") {
         match args.get("c") {
             Some(content) => {
